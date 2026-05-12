@@ -1,0 +1,23 @@
+{
+  "name": "authem",
+  "version": "1.0.0",
+  "description": "Authem is to sell or buy",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rananitish37/authem.git"
+  },
+  "author": "Nitish Rana",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rananitish37/authem/issues"
+  },
+  "homepage": "https://github.com/rananitish37/authem#readme",
+  "dependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
