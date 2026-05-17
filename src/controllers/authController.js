@@ -88,7 +88,19 @@ const profile = async (req, res) => {
     }
 };
 
-
+const logout = async (req, res) =>{
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: "strict"
+        });
+        res.status(200).json({
+            message: "Logged out successfully"
+        })
+    } catch (error) {
+        res.status(400).send("Error: " + error);
+    }
+}
 module.exports = {
   registerUser,
   loginUser,
