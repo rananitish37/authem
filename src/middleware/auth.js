@@ -6,7 +6,7 @@ const userAuth = async (req,res,next)=>{
         const cookie = req.cookies;
         const {token} = cookie;
         if(!token){
-            throw new Error("Token is not valid");
+            throw new Error("Token doesn't exist yet, it's missing");
         }
         const decode = await jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decode._id);
@@ -16,7 +16,7 @@ const userAuth = async (req,res,next)=>{
         req.user = user;
         next();
     } catch (error) {
-        res.send("Unathorized access")
+        res.status(401).send("Unauthorized access");
     }
 }
 

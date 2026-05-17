@@ -1,6 +1,4 @@
 const User = require("../models/user");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res) => {
   try {
@@ -8,12 +6,11 @@ const registerUser = async (req, res) => {
     if(!firstName || !email || !password){
         throw new Error("Please enter emailid, password and name");
     }
-    const encryptedPassword = await bcrypt.hash(password, 10);
     const user = new User({
         firstName,
         lastName,
         email,
-        password:encryptedPassword,
+        password,
         gender,
         profilePicture,
         address
@@ -26,7 +23,7 @@ const registerUser = async (req, res) => {
       res.cookie("token", token, {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict"
       });
       const response = {
@@ -61,7 +58,7 @@ const loginUser = async (req, res) => {
       res.cookie("token", token, {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict"
       });
       const response = {
@@ -76,7 +73,7 @@ const loginUser = async (req, res) => {
       };
       res.status(200).send(response);
     } else {
-      throw new Error(" Invalid credential");
+      throw new Error("Invalid credential");
     }
   } catch (error) {
     res.status(400).send("Error: " + error);
@@ -91,8 +88,10 @@ const profile = async (req, res) => {
     }
 };
 
+
 module.exports = {
   registerUser,
   loginUser,
   profile,
+  logout,
 };

@@ -33,11 +33,6 @@ const userSchema = mongoose.Schema(
       required: true,
       select: false,
       minLength: 10,
-      validate(value) {
-        if (!validator.isStrongPassword(value)) {
-          throw new Error("Password is not a String Password");
-        }
-      },
     },
     role: {
       type: String,
@@ -83,5 +78,12 @@ userSchema.methods.validatePassword= async function(inputPassword){
     const validUser = await bcrypt.compare(inputPassword,user.password);
     return validUser;
 }
+userSchema.pre("save", async function(next){
+    if(!this.isModified("password")){
+        return next();
+    }
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+})
 const User = mongoose.model("User", userSchema)
 module.exports = User;
