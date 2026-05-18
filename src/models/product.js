@@ -49,5 +49,16 @@ const productSchema = mongoose.Schema({
     timestamps: true,
 })
 
+productSchema.pre("save", function(next){
+    if(!this.sku){
+        const brand    = this.brand.toUpperCase().replace(/ /g,"");
+        const name     = this.name.toUpperCase().replace(/ /g,"");
+        const colorway = this.colorway.toUpperCase().slice(0,3);
+        const size     = this.size;
+        this.sku = `${brand}-${name}-${colorway}-${size}`;
+    }
+    next();
+})
+
 const Product = mongoose.model("Product",productSchema);
 module.exports = Product;
