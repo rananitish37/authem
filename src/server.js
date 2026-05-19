@@ -1,7 +1,8 @@
 const cookieParser = require("cookie-parser");
 const express = require("express");
-const connectDB = require("./config/db")
-const authRoutes = require("./routes/auth")
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/auth");
+const productRoutes = require("./routes/product");
 require("dotenv").config();
 
 
@@ -11,6 +12,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/auth",authRoutes);
+app.use("/api/products",productRoutes);
 
 connectDB().then(()=>{
     console.log("Connected db successfully");

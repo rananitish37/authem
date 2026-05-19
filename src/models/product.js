@@ -8,10 +8,12 @@ const productSchema = mongoose.Schema({
     name:{
         type: String,
         required: true,
+        index: true,
     },
     brand:{
         type: String,
         required: true,
+        index: true,
     },
     colorway:{
         type: String,
