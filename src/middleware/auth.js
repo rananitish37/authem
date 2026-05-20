@@ -19,7 +19,20 @@ const userAuth = async (req,res,next)=>{
         res.status(401).send("Unauthorized access");
     }
 }
+const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        try {
+            if(!roles.includes(req.user.role)){
+                return res.status(403).send("user not allowed");
+            }
+            next()
+        } catch (error) {
+            res.status(403).send("Not authorized");
+        }
+    }
+}
 
 module.exports={
     userAuth,
+    restrictTo,
 }
