@@ -1,4 +1,4 @@
-package com.authem.auth.dto;
+package com.authem.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

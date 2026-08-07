@@ -1,4 +1,4 @@
-package com.authem.auth.dto;
+package com.authem.auth.dto.request;
 
 
 import jakarta.validation.constraints.Email;
