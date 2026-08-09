@@ -1,4 +1,0 @@
-package com.authem.auth.security;
-
-public class UserPrincipal {
-}
