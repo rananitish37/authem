@@ -17,10 +17,10 @@ import java.time.LocalDateTime;
 public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @Column(name = "user_id", nullable = false, unique = true)
-    private int userId;
+    private Long userId;
 
     @Builder.Default
     @Column(name = "balance", nullable = false, precision = 12, scale = 2)

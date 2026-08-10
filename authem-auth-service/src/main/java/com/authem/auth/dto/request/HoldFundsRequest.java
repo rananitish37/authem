@@ -11,10 +11,10 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class WalletTopUpRequest {
+@AllArgsConstructor
+public class HoldFundsRequest {
     @NotNull(message = "Amount is required")
-    @DecimalMin(value = "1.00",message = "Minimum top-up amount is $1.00")
+    @DecimalMin(value = "1.00", message = "Minimum amount is $1.00")
     private BigDecimal amount;
 }
