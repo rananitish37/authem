@@ -1,0 +1,12 @@
+package com.authem.auth.model;
+
+public enum FulfillmentStatus {
+    PENDING_SELLER_SHIPMENT,
+    IN_TRANSIT_TO_AUTHENTICATION,
+    AUTHENTICATING,
+    AUTHENTICATED,
+    SHIPPED_TO_BUYER,
+    DELIVERED,
+    AUTHENTICATION_FAILED,
+    CANCELLED
+}
