@@ -1,6 +1,7 @@
 package com.authem.auth.service.impl;
 
 import com.authem.auth.dto.response.OrderResponse;
+import com.authem.auth.exception.InvalidTradeException;
 import com.authem.auth.model.Order;
 import com.authem.auth.repository.OrderRepository;
 import com.authem.auth.service.OrderService;
@@ -27,7 +28,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
 
         if (!order.getBuyerId().equals(userId) && !order.getSellerId().equals(userId)) {
-            throw new RuntimeException("Unauthorized access to order details");
+            throw new InvalidTradeException("You are not authorized to view this order."); // or AccessDeniedException
         }
 
         return mapToResponse(order);

@@ -53,8 +53,8 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse releaseFunds(Long userId, BigDecimal amount) {
         Wallet wallet = findWalletOrThrow(userId);
 
-        if(wallet.getFrozenBalance().compareTo(amount) <0){
-            throw new IllegalStateException("Cannot release $" + amount + " - frozen balance is only $" + wallet.getFrozenBalance());
+        if(wallet.getFrozenBalance().compareTo(amount) < 0){
+            throw new InsufficientBalanceException("Cannot release $" + amount + " - frozen balance is only $" + wallet.getFrozenBalance());
         }
         wallet.setFrozenBalance(wallet.getFrozenBalance().subtract(amount));
         wallet.setBalance(wallet.getBalance().add(amount));

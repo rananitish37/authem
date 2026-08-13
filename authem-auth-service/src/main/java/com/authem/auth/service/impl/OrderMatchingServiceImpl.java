@@ -3,6 +3,7 @@ package com.authem.auth.service.impl;
 import com.authem.auth.dto.request.PlaceAskRequest;
 import com.authem.auth.dto.request.PlaceBidRequest;
 import com.authem.auth.dto.response.TradeExecutionResponse;
+import com.authem.auth.exception.ResourceNotFoundException;
 import com.authem.auth.model.*;
 import com.authem.auth.model.FulfillmentStatus;
 import com.authem.auth.model.OrderStatus;
@@ -33,7 +34,7 @@ public class OrderMatchingServiceImpl implements OrderMatchingService {
     @Transactional
     public TradeExecutionResponse placeBid(Long buyerId, PlaceBidRequest request) {
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new IllegalArgumentException("Product Not Found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product Not Found"));
 
         walletService.holdFunds(buyerId, request.getBidPrice());
 

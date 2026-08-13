@@ -63,6 +63,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidTradeException.class)
+    public ResponseEntity<ErrorDetails> handleInvalidTrade(InvalidTradeException ex) {
+        ErrorDetails error = ErrorDetails.builder()
+                .timestamp(LocalDateTime.now())
+                .message(ex.getMessage())
+                .details("Bad Request: Invalid trade operation")
+                .build();
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception ex){
         ErrorDetails error = ErrorDetails.builder()
