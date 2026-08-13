@@ -76,6 +76,32 @@ public class WalletServiceImpl implements WalletService {
         return mapToResponse(walletRepository.save(wallet));
     }
 
+    @Override
+    @Transactional
+    public void settleTrade(Long buyerId, Long sellerId, BigDecimal bidAmount, BigDecimal executionPrice) {
+        Wallet buyerWallet = walletRepository.findByUserId(buyerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Buyer wallet not found"));
+
+        Wallet sellerWallet = walletRepository.findByUserId(sellerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller wallet not found"));
+
+        if (buyerWallet.getFrozenBalance().compareTo(bidAmount) < 0) {
+            throw new InsufficientBalanceException("Insufficient frozen funds for settlement");
+        }
+
+        buyerWallet.setFrozenBalance(buyerWallet.getFrozenBalance().subtract(bidAmount));
+
+        BigDecimal priceImprovementRefund = bidAmount.subtract(executionPrice);
+        if (priceImprovementRefund.compareTo(BigDecimal.ZERO) > 0) {
+            buyerWallet.setBalance(buyerWallet.getBalance().add(priceImprovementRefund));
+        }
+
+        sellerWallet.setBalance(sellerWallet.getBalance().add(executionPrice));
+
+        walletRepository.save(buyerWallet);
+        walletRepository.save(sellerWallet);
+    }
+
     private Wallet createInitialWallet(Long userId){
         Wallet wallet = Wallet.builder()
                 .userId(userId)

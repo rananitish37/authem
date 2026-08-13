@@ -14,4 +14,6 @@ public interface WalletService {
     WalletResponse holdFunds(Long userId, BigDecimal amount);
     WalletResponse releaseFunds(Long userId, BigDecimal amount);
     WalletResponse deductFrozenBalance(Long userId, BigDecimal amount);
+
+    void settleTrade(Long buyerId, Long sellerId, BigDecimal bidAmount, BigDecimal executionPrice);
 }

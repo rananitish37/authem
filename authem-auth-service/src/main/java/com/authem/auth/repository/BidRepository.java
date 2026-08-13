@@ -26,11 +26,11 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
      */
     @Query("""
             SELECT b FROM Bid b
-                    WHERE b.product.id = :productId
-                      AND b.shoeSize = :shoeSize
-                      AND b.status = :status
-                      AND b.bidPrice >= :askPrice
-                    ORDER BY b.bidPrice DESC, b.createdAt ASC
+            WHERE b.product.id = :productId
+              AND b.shoeSize = :shoeSize
+              AND b.status = :status
+              AND b.bidPrice >= :askPrice
+            ORDER BY b.bidPrice DESC, b.createdAt ASC
             """)
     List<Bid> findMatchingBids(
             @Param("productId") Long productId,
@@ -49,10 +49,17 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
         SELECT MAX(b.bidPrice) FROM Bid b
         WHERE b.product.id = :productId
           AND b.shoeSize = :shoeSize
-          AND b.status = com.authem.auth.model.enums.OrderStatus.PENDING
+          AND b.status = :status
     """)
     Optional<BigDecimal> findHighestBidPrice(
             @Param("productId") Long productId,
-            @Param("shoeSize") String shoeSize
+            @Param("shoeSize") String shoeSize,
+            @Param("status") OrderStatus status
     );
+    default Optional<BigDecimal> findHighestBidPrice(
+            @Param("productId") Long productId,
+            @Param("shoeSize") String shoeSize
+    ){
+        return findHighestBidPrice(productId, shoeSize, OrderStatus.PENDING);
+    }
 }

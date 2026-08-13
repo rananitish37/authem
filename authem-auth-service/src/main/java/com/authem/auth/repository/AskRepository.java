@@ -19,13 +19,13 @@ public interface AskRepository extends JpaRepository<Ask, Long> {
     List<Ask> findByUserIdAndStatus(Long userId, OrderStatus status);
 
     @Query("""
-        SELECT a FROM Ask a
-        WHERE a.product.id = :productId
-          AND a.shoeSize = :shoeSize
-          AND a.status = :status
-          AND a.askPrice <= :bidPrice
-        ORDER BY a.askPrice ASC, a.createdAt ASC
-    """)
+            SELECT a FROM Ask a
+            WHERE a.product.id = :productId
+              AND a.shoeSize = :shoeSize
+              AND a.status = :status
+              AND a.askPrice <= :bidPrice
+            ORDER BY a.askPrice ASC, a.createdAt ASC
+            """)
     List<Ask> findMatchingAsks(
             @Param("productId") Long productId,
             @Param("shoeSize") String shoeSize,
@@ -43,12 +43,16 @@ public interface AskRepository extends JpaRepository<Ask, Long> {
         SELECT MIN(a.askPrice) FROM Ask a
         WHERE a.product.id = :productId
           AND a.shoeSize = :shoeSize
-          AND a.status = com.authem.auth.model.enums.OrderStatus.PENDING
+          AND a.status = :status
     """)
     Optional<BigDecimal> findLowestAskPrice(
             @Param("productId") Long productId,
-            @Param("shoeSize") String shoeSize
+            @Param("shoeSize") String shoeSize,
+            @Param("status") OrderStatus status
     );
+    default Optional<BigDecimal> findLowestAskPrice(Long productId, String shoeSize) {
+        return findLowestAskPrice(productId, shoeSize, OrderStatus.PENDING);
+    }
 
 
 }
