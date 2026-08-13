@@ -76,6 +76,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception ex){
+        ex.printStackTrace();
         ErrorDetails error = ErrorDetails.builder()
                 .timestamp(LocalDateTime.now())
                 .message(ex.getMessage())
