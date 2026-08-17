@@ -5,8 +5,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "asks", indexes = {
+@Entity(name = "ListingAsk")
+@Table(name = "listing_asks", indexes = {
         @Index(name = "idx_master_product_size", columnList = "master_product_id, size"),
         @Index(name = "idx_seller_status", columnList = "seller_id, status")
 })

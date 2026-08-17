@@ -1,6 +1,5 @@
 package com.authem.auth.repository;
 
-import com.authem.auth.model.Ask;
 import com.authem.auth.model.Bid;
 import com.authem.auth.model.OrderStatus;
 import org.springframework.data.domain.PageRequest;
@@ -56,10 +55,29 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
             @Param("shoeSize") String shoeSize,
             @Param("status") OrderStatus status
     );
+
     default Optional<BigDecimal> findHighestBidPrice(
             @Param("productId") Long productId,
             @Param("shoeSize") String shoeSize
     ){
         return findHighestBidPrice(productId, shoeSize, OrderStatus.PENDING);
+    }
+
+    /**
+     * Overall highest bid for a product across all sizes.
+     * Uses parameter mapping to avoid HQL enum path resolution errors.
+     */
+    @Query("""
+        SELECT MAX(b.bidPrice) FROM Bid b
+        WHERE b.product.id = :productId
+          AND b.status = :status
+    """)
+    Optional<BigDecimal> findHighestBidByProduct(
+            @Param("productId") Long productId,
+            @Param("status") OrderStatus status
+    );
+
+    default Optional<BigDecimal> findHighestBidByProduct(Long productId) {
+        return findHighestBidByProduct(productId, OrderStatus.PENDING);
     }
 }

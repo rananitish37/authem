@@ -15,6 +15,7 @@ import {AdminAddProduct} from './pages/AdminAddProduct';
 import AdminCatalogManager from './components/admin/AdminCatalogManager';
 import SellerCreateAsk from './components/seller/SellerCreateAsk';
 import { ThemeProvider } from './context/ThemeContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -29,13 +30,15 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/productdetails/:id" element={<ProductDetail />} />
             <Route path="/browse" element={<Browse />} />
-            <Route path="/admin/add-product" element={<AdminAddProduct />} />
-            <Route path="/admin/catalog" element={<AdminCatalogManager />} />
+            <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
+                    <Route path="/admin/add-product" element={<AdminAddProduct />} />
+                    <Route path="/admin/catalog" element={<AdminCatalogManager />} />
+            </Route>
             <Route path="/seller/create-ask" element={<SellerCreateAsk />} />
 
-            {/* Fallback Route */}
+
             <Route path="*" element={<Home />} />
           </Routes>
         </main>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Tag, CheckCircle2, ArrowLeft, DollarSign, Layers } from 'lucide-react';
+import { Search, Tag, CheckCircle2, ArrowLeft, DollarSign, Layers, Loader2 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore'; // Adjust path based on your store file
 
 const US_SIZES = ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13'];
 
@@ -17,15 +18,49 @@ export default function SellerCreateAsk() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successAsk, setSuccessAsk] = useState(null);
 
+  // Helper to retrieve JWT Token dynamically
+  const getAuthHeaders = () => {
+    let token = useAuthStore.getState().token;
+    if (!token) {
+      try {
+        const persisted = JSON.parse(localStorage.getItem('auth-storage'));
+        token = persisted?.state?.token;
+      } catch (e) {
+        // Fallthrough
+      }
+    }
+    if (!token) {
+      token = localStorage.getItem('token') || localStorage.getItem('jwt');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
+
   // Search Master Catalog API
   useEffect(() => {
     const fetchCatalog = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/v1/seller/catalog/search?query=${searchQuery}&size=8`);
+        const params = new URLSearchParams({
+          search: searchQuery.trim(),
+          page: '0',
+          size: '12',
+          sort: 'id,desc'
+        });
+
+        // Endpoint can be updated to /api/v1/seller/catalog or /api/v1/admin/catalog
+        const res = await fetch(`/api/v1/seller/catalog/search?${params.toString()}`, {
+          headers: getAuthHeaders()
+        });
+
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data.content || []);
+        } else {
+          console.error('Failed to query master catalog. Status:', res.status);
         }
       } catch (err) {
         console.error('Failed to query master catalog:', err);
@@ -51,7 +86,7 @@ export default function SellerCreateAsk() {
     try {
       const res = await fetch('/api/v1/seller/asks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           masterProductId: selectedProduct.id,
           size: selectedSize,
@@ -64,6 +99,9 @@ export default function SellerCreateAsk() {
         const data = await res.json();
         setSuccessAsk(data);
         setStep(3); // Success step
+      } else {
+        const errData = await res.json();
+        alert(errData.message || 'Failed to submit ask');
       }
     } catch (err) {
       console.error('Error submitting ask:', err);
@@ -83,9 +121,13 @@ export default function SellerCreateAsk() {
             <p className="text-sm text-slate-400">List an Ask in the Authem master catalog</p>
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className={`px-3 py-1 rounded-full ${step === 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>1. Select Product</span>
+            <span className={`px-3 py-1 rounded-full ${step === 1 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+              1. Select Product
+            </span>
             <span className="text-slate-600">→</span>
-            <span className={`px-3 py-1 rounded-full ${step === 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>2. Set Price</span>
+            <span className={`px-3 py-1 rounded-full ${step === 2 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
+              2. Set Price
+            </span>
           </div>
         </div>
 
@@ -104,7 +146,14 @@ export default function SellerCreateAsk() {
             </div>
 
             {loading ? (
-              <div className="py-12 text-center text-slate-500">Searching master catalog...</div>
+              <div className="py-12 text-center text-slate-500 flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
+                Searching master catalog...
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl">
+                No sneakers found in master catalog. Try another query or add a product in Admin panel.
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {searchResults.map((item) => (
@@ -115,11 +164,18 @@ export default function SellerCreateAsk() {
                   >
                     <div>
                       <div className="h-40 bg-slate-950 rounded-lg flex items-center justify-center p-2 mb-3 overflow-hidden">
-                        <img src={item.imageUrl} alt={item.name} className="max-h-full object-contain group-hover:scale-105 transition duration-300" />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="max-h-full object-contain group-hover:scale-105 transition duration-300"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/300?text=Sneaker+Image';
+                          }}
+                        />
                       </div>
                       <span className="text-xs font-mono text-indigo-400">{item.sku}</span>
                       <h3 className="font-semibold text-white text-sm line-clamp-1 mt-0.5">{item.name}</h3>
-                      <p className="text-xs text-slate-400">{item.brand} • {item.colorway}</p>
+                      <p className="text-xs text-slate-400">{item.brand} • {item.colorway || 'N/A'}</p>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs">
@@ -208,8 +264,9 @@ export default function SellerCreateAsk() {
               <button
                 type="submit"
                 disabled={!selectedSize || !askPrice || isSubmitting}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition"
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2"
               >
+                {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
                 {isSubmitting ? 'Posting Ask...' : `List Ask for $${askPrice || '0'}`}
               </button>
             </form>

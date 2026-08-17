@@ -26,6 +26,12 @@ export const Register = () => {
     e.preventDefault();
     setError('');
 
+    // Java DTO enforces min = 8 characters
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -34,15 +40,24 @@ export const Register = () => {
     setLoading(true);
 
     try {
+      // ✅ Pass separate firstName and lastName matching RegisterRequest DTO
       await register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
         password: formData.password,
       });
+
       navigate('/browse');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Try a different email.');
+      const validationErrors = err.response?.data?.validationErrors;
+      if (validationErrors) {
+        // Grab the first validation error message returned by Spring Boot
+        const firstErrorKey = Object.keys(validationErrors)[0];
+        setError(validationErrors[firstErrorKey]);
+      } else {
+        setError(err.response?.data?.message || 'Registration failed. Check inputs.');
+      }
     } finally {
       setLoading(false);
     }
@@ -87,7 +102,7 @@ export const Register = () => {
                   required
                   value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="John"
+                  placeholder="Nitish"
                   className="w-full pl-10 pr-3 py-2.5 bg-authem-grayBg border border-authem-border rounded-xl text-xs font-semibold text-authem-dark focus:outline-none focus:border-authem-green focus:bg-white transition-all"
                 />
               </div>
@@ -103,7 +118,7 @@ export const Register = () => {
                 required
                 value={formData.lastName}
                 onChange={handleChange}
-                placeholder="Doe"
+                placeholder="Rana"
                 className="w-full px-3 py-2.5 bg-authem-grayBg border border-authem-border rounded-xl text-xs font-semibold text-authem-dark focus:outline-none focus:border-authem-green focus:bg-white transition-all"
               />
             </div>
@@ -121,7 +136,7 @@ export const Register = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="name@example.com"
+                placeholder="nitish.rana@example.com"
                 className="w-full pl-10 pr-4 py-2.5 bg-authem-grayBg border border-authem-border rounded-xl text-xs font-semibold text-authem-dark focus:outline-none focus:border-authem-green focus:bg-white transition-all"
               />
             </div>
@@ -139,7 +154,7 @@ export const Register = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="w-full pl-10 pr-4 py-2.5 bg-authem-grayBg border border-authem-border rounded-xl text-xs font-semibold text-authem-dark focus:outline-none focus:border-authem-green focus:bg-white transition-all"
               />
             </div>

@@ -10,23 +10,26 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+@Repository("listingAskRepository")
 public interface AskRepository extends JpaRepository<Ask, Long> {
 
     List<Ask> findBySellerIdAndStatus(Long sellerId, Ask.AskStatus status);
 
     @Query("""
-        SELECT MIN(a.askPrice) FROM Ask a 
+        SELECT MIN(a.askPrice) FROM ListingAsk a 
         WHERE a.masterProductId = :masterProductId 
           AND a.size = :size 
-          AND a.status = 'ACTIVE'
+          AND a.status = com.authem.listing.entity.Ask.AskStatus.ACTIVE
     """)
-    Optional<BigDecimal> findLowestAskByProductAndSize(@Param("masterProductId") Long masterProductId, @Param("size") String size);
+    Optional<BigDecimal> findLowestAskByProductAndSize(
+            @Param("masterProductId") Long masterProductId,
+            @Param("size") String size
+    );
 
     @Query("""
-        SELECT MIN(a.askPrice) FROM Ask a 
+        SELECT MIN(a.askPrice) FROM ListingAsk a 
         WHERE a.masterProductId = :masterProductId 
-          AND a.status = 'ACTIVE'
+          AND a.status = com.authem.listing.entity.Ask.AskStatus.ACTIVE
     """)
     Optional<BigDecimal> findLowestAskByProduct(@Param("masterProductId") Long masterProductId);
 }

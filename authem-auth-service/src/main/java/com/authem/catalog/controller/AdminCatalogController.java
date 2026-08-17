@@ -1,6 +1,7 @@
 package com.authem.catalog.controller;
 
 import com.authem.catalog.dto.ProductRequestDTO;
+import com.authem.catalog.dto.ProductResponseDTO;
 import com.authem.catalog.entity.MasterProduct;
 import com.authem.catalog.service.MasterProductService;
 import jakarta.validation.Valid;
@@ -22,8 +23,17 @@ public class AdminCatalogController {
     private final MasterProductService productService;
 
     @PostMapping
-    public ResponseEntity<MasterProduct> createProduct(@Valid @RequestBody ProductRequestDTO request) {
-        return new ResponseEntity<>(productService.createProduct(request), HttpStatus.CREATED);
+    public ResponseEntity<ProductResponseDTO> createProduct(@Valid @RequestBody ProductRequestDTO request) {
+        MasterProduct created = productService.createProduct(request);
+        ProductResponseDTO response = new ProductResponseDTO(
+                created.getSku(),
+                created.getName(),
+                created.getBrand(),
+                created.getColorway(),
+                created.getRetailPrice(),
+                created.getImageUrl()
+        );
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping("/bulk")

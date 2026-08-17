@@ -28,6 +28,7 @@ public class SellerAskServiceImpl implements SellerAskService {
 
         return products.map(product -> {
             BigDecimal lowestAsk = askRepository.findLowestAskByProduct(product.getId()).orElse(null);
+
             return new MasterProductSummaryDTO(
                     product.getId(),
                     product.getSku(),

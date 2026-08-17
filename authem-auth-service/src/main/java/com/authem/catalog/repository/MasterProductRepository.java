@@ -13,32 +13,20 @@ import java.util.Optional;
 @Repository
 public interface MasterProductRepository extends JpaRepository<MasterProduct, Long> {
 
-    /**
-     * Checks if a product with the given SKU already exists in the catalog.
-     */
     boolean existsBySku(String sku);
 
-    /**
-     * Finds an active product by SKU.
-     */
     Optional<MasterProduct> findBySkuAndActiveTrue(String sku);
 
-    /**
-     * Finds an active product by ID.
-     */
     Optional<MasterProduct> findByIdAndActiveTrue(Long id);
 
-    /**
-     * Searches active master products by model name or SKU code, with optional brand filtering.
-     */
     @Query("""
         SELECT p FROM MasterProduct p 
         WHERE p.active = true 
           AND (:brand IS NULL OR :brand = '' OR LOWER(p.brand) = LOWER(:brand))
           AND (
             :search IS NULL OR :search = '' 
-            OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) 
-            OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(p.name) LIKE LOWER(CONCAT('%', COALESCE(:search, ''), '%')) 
+            OR LOWER(p.sku) LIKE LOWER(CONCAT('%', COALESCE(:search, ''), '%'))
           )
     """)
     Page<MasterProduct> searchMasterCatalog(

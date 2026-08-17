@@ -16,7 +16,7 @@ export const Navbar = () => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/browse?search=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -27,10 +27,11 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-authem-border dark:border-slate-800 shadow-sm transition-colors">
+    <header className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors border-b border-slate-200 dark:border-slate-800">
+
       {/* Top Banner */}
-     <div className="bg-slate-950 text-white text-xs font-semibold py-1.5 px-4 text-center flex items-center justify-center gap-2">
-       <ShieldCheck className="w-4 h-4 text-authem-green" />
+      <div className="bg-slate-950 text-white text-xs font-semibold py-1.5 px-4 text-center flex items-center justify-center gap-2">
+        <ShieldCheck className="w-4 h-4 text-emerald-400" />
         <span>100% Verified Authentic Sneakers, Apparel & Collectibles</span>
       </div>
 
@@ -43,7 +44,7 @@ export const Navbar = () => {
             <AuthemLogo className="h-8" />
           </Link>
 
-          {/* Search Bar */}
+          {/* Desktop Search Bar */}
           <form
             onSubmit={handleSearchSubmit}
             className="flex-1 max-w-xl relative hidden md:block"
@@ -54,7 +55,7 @@ export const Navbar = () => {
                 placeholder="Search for brand, colorway, or SKU (e.g., Air Jordan 1)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-authem-grayBg dark:bg-slate-800 text-authem-dark dark:text-slate-100 placeholder-slate-400 pl-10 pr-4 py-2 rounded-full border border-transparent focus:border-authem-green focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all text-sm font-medium"
+                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-10 pr-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all text-sm font-medium"
               />
               <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
             </div>
@@ -64,18 +65,20 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-5">
             <Link
               to="/browse"
-              className="text-sm font-bold text-slate-700 hover:text-authem-green dark:text-slate-200 dark:hover:text-authem-green transition-colors"
+              className="text-sm font-bold text-slate-700 hover:text-emerald-600 dark:text-slate-200 dark:hover:text-emerald-400 transition-colors"
             >
               Browse
             </Link>
 
             {/* Main Seller Button */}
-            <Link
-              to="/seller/create-ask"
-              className="px-4 py-1.5 text-xs font-bold rounded-full bg-authem-green hover:bg-authem-greenHover text-white transition-colors shadow-sm"
-            >
-              Sell
-            </Link>
+            {isAuthenticated && user?.role === 'ROLE_USER' && (
+              <Link
+                to="/seller/create-ask"
+                className="px-4 py-1.5 text-xs font-bold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+              >
+                Sell
+              </Link>
+            )}
 
             {/* Dark / Light Theme Switcher */}
             <ThemeToggle />
@@ -85,9 +88,9 @@ export const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                  className="flex items-center gap-2 text-sm font-bold text-authem-dark dark:text-slate-100 hover:text-authem-green focus:outline-none"
+                  className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-emerald-600 dark:hover:text-emerald-400 focus:outline-none"
                 >
-                  <div className="w-8 h-8 rounded-full bg-authem-dark dark:bg-slate-700 text-white flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-slate-700 text-white flex items-center justify-center font-bold text-xs">
                     {user?.firstName ? user.firstName[0].toUpperCase() : 'U'}
                   </div>
                   <span>{user?.firstName || 'Account'}</span>
@@ -95,32 +98,34 @@ export const Navbar = () => {
 
                 {/* Profile Dropdown Menu */}
                 {isProfileDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-lg shadow-lg py-1 border border-authem-border dark:border-slate-700 z-50">
-                    <div className="px-4 py-2 border-b border-authem-border dark:border-slate-700">
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-800 rounded-lg shadow-xl py-1 border border-slate-200 dark:border-slate-700 z-50">
+                    <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
                       <p className="text-xs text-slate-500 dark:text-slate-400">Signed in as</p>
-                      <p className="text-sm font-bold text-authem-dark dark:text-white truncate">{user?.email}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user?.email}</p>
                     </div>
 
                     <Link
                       to="/profile"
                       onClick={() => setIsProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-authem-grayBg dark:hover:bg-slate-700"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
                     >
-                      <User className="w-4 h-4" /> Portfolio & Orders
+                      <User className="w-4 h-4 text-slate-500 dark:text-slate-400" /> Portfolio & Orders
                     </Link>
 
                     {/* Admin Link inside dropdown */}
-                    <Link
-                      to="/admin/catalog"
-                      onClick={() => setIsProfileDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-authem-grayBg dark:hover:bg-slate-700"
-                    >
-                      <Settings className="w-4 h-4" /> Admin Catalog
-                    </Link>
+                    {isAuthenticated && user?.role === 'ROLE_ADMIN' && (
+                      <Link
+                        to="/admin/catalog"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
+                      >
+                        <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400" /> Admin Catalog
+                      </Link>
+                    )}
 
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700"
+                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-slate-700/50 font-medium"
                     >
                       <LogOut className="w-4 h-4" /> Log Out
                     </button>
@@ -131,13 +136,13 @@ export const Navbar = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3 py-1.5 text-sm font-bold text-slate-700 hover:text-authem-green dark:text-slate-200 transition-colors"
+                  className="px-3 py-1.5 text-sm font-bold text-slate-700 hover:text-emerald-600 dark:text-slate-200 dark:hover:text-emerald-400 transition-colors"
                 >
                   Log In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-1.5 text-sm font-bold bg-authem-dark dark:bg-slate-800 text-white rounded-full hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm"
+                  className="px-4 py-1.5 text-sm font-bold bg-slate-900 dark:bg-slate-800 text-white rounded-full hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-sm"
                 >
                   Sign Up
                 </Link>
@@ -150,7 +155,7 @@ export const Navbar = () => {
             <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-authem-dark dark:text-slate-200 p-2 focus:outline-none"
+              className="text-slate-900 dark:text-slate-200 p-2 focus:outline-none"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -166,7 +171,7 @@ export const Navbar = () => {
               placeholder="Search sneakers, apparel..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-authem-grayBg dark:bg-slate-800 text-authem-dark dark:text-slate-100 pl-10 pr-4 py-2 rounded-full border border-transparent focus:border-authem-green focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-sm font-medium"
+              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 pl-10 pr-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none text-sm font-medium"
             />
             <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
           </form>
@@ -174,55 +179,60 @@ export const Navbar = () => {
       </div>
 
       {/* Categories Sub-bar */}
-      <div className="bg-authem-grayBg dark:bg-slate-950 border-t border-authem-border dark:border-slate-800 hidden md:block transition-colors">
+      <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 hidden md:block transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ul className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 py-2.5">
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=sneakers">Sneakers</Link></li>
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=shoes">Shoes</Link></li>
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=apparel">Apparel</Link></li>
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=electronics">Electronics</Link></li>
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=trading-cards">Trading Cards</Link></li>
-            <li className="hover:text-authem-green dark:hover:text-authem-green cursor-pointer"><Link to="/browse?category=accessories">Accessories</Link></li>
-            <li className="text-authem-green hover:underline cursor-pointer"><Link to="/browse?sort=trending">Trending</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=sneakers">Sneakers</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=shoes">Shoes</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=apparel">Apparel</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=electronics">Electronics</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=trading-cards">Trading Cards</Link></li>
+            <li className="hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"><Link to="/browse?category=accessories">Accessories</Link></li>
+            <li className="text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"><Link to="/browse?sort=trending">Trending</Link></li>
           </ul>
         </div>
       </div>
 
       {/* Mobile Drawer Navigation */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 border-t border-authem-border dark:border-slate-800 px-4 pt-2 pb-6 space-y-3">
+        <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 pt-2 pb-6 space-y-3">
           <Link
             to="/browse"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-base font-bold text-authem-dark dark:text-slate-100 py-2"
+            className="block text-base font-bold text-slate-900 dark:text-slate-100 py-2"
           >
             Browse All
           </Link>
-          <Link
-            to="/seller/create-ask"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-base font-bold text-authem-green py-2"
-          >
-            Sell / Create Ask
-          </Link>
 
-          <div className="border-t border-authem-border dark:border-slate-800 pt-3">
+          {isAuthenticated && user?.role === 'ROLE_USER' && (
+            <Link
+              to="/seller/create-ask"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block text-base font-bold text-emerald-600 dark:text-emerald-400 py-2"
+            >
+              Sell / Create Ask
+            </Link>
+          )}
+
+          <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
             {isAuthenticated ? (
               <>
                 <Link
                   to="/profile"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base font-bold text-authem-dark dark:text-slate-100 py-2"
+                  className="block text-base font-bold text-slate-900 dark:text-slate-100 py-2"
                 >
                   My Portfolio ({user?.firstName})
                 </Link>
-                <Link
-                  to="/admin/catalog"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block text-base font-bold text-slate-600 dark:text-slate-300 py-2"
-                >
-                  Admin Catalog
-                </Link>
+                {user?.role === 'ROLE_ADMIN' && (
+                  <Link
+                    to="/admin/catalog"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block text-base font-bold text-slate-600 dark:text-slate-300 py-2"
+                  >
+                    Admin Catalog
+                  </Link>
+                )}
                 <button
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
                   className="w-full text-left text-base font-bold text-red-600 dark:text-red-400 py-2"
@@ -235,14 +245,14 @@ export const Navbar = () => {
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 font-bold text-authem-dark dark:text-slate-100 border border-authem-dark dark:border-slate-700 rounded-full"
+                  className="w-full text-center py-2.5 font-bold text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-full"
                 >
                   Log In
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 font-bold bg-authem-dark dark:bg-slate-800 text-white rounded-full"
+                  className="w-full text-center py-2.5 font-bold bg-slate-900 dark:bg-slate-800 text-white rounded-full"
                 >
                   Sign Up
                 </Link>

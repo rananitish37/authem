@@ -3,6 +3,7 @@ package com.authem.auth.service.impl;
 import com.authem.auth.dto.request.LoginRequest;
 import com.authem.auth.dto.request.RegisterRequest;
 import com.authem.auth.dto.response.AuthResponse;
+import com.authem.auth.dto.response.UserResponse;
 import com.authem.auth.exception.UserAlreadyExistsException;
 import com.authem.auth.model.Role;
 import com.authem.auth.model.User;
@@ -40,12 +41,13 @@ public class AuthServiceImpl implements AuthService {
                 .enabled(true)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         var jwtToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserResponse(savedUser))
                 .build();
     }
 
@@ -63,6 +65,20 @@ public class AuthServiceImpl implements AuthService {
         var jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder()
                 .token(jwtToken)
+                .user(mapToUserResponse(user))
+                .build();
+    }
+
+    private UserResponse mapToUserResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNo(user.getPhoneNo())
+                .role(user.getRole())
+                .enabled(user.isEnabled())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Trash2, Edit3, Image as ImageIcon, UploadCloud, AlertCircle } from 'lucide-react';
+import { Search, Plus, Trash2, Edit3, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore'; // 👈 Adjust import path to your store file
 
 const INITIAL_FORM = {
   sku: '',
@@ -13,6 +14,7 @@ const INITIAL_FORM = {
 export default function AdminCatalogManager() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,46 +22,88 @@ export default function AdminCatalogManager() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [error, setError] = useState('');
 
-  // Fetch Catalog
+  // Helper to get auth headers (JWT or standard token)
+  const getAuthHeaders = () => {
+    let token = useAuthStore.getState().token;
+    if (!token) {
+      try {
+        const persisted = JSON.parse(localStorage.getItem('auth-storage'));
+        token = persisted?.state?.token;
+      } catch (e) {
+      }
+    }
+
+    if (!token) {
+      token = localStorage.getItem('token') || localStorage.getItem('jwt');
+    }
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
+
+  // Fetch Master Catalog with Search & Filter
   const fetchCatalog = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/v1/admin/catalog?search=${search}&brand=${brandFilter}&page=0&size=20`);
+      const params = new URLSearchParams({
+        search: search.trim(),
+        brand: brandFilter,
+        page: '0',
+        size: '20',
+        sort: 'id,desc'
+      });
+
+      const response = await fetch(`/api/v1/admin/catalog?${params.toString()}`, {
+        headers: getAuthHeaders()
+      });
+
       if (response.ok) {
         const data = await response.json();
         setProducts(data.content || []);
+      } else {
+        console.error('Failed to fetch catalog:', response.statusText);
       }
     } catch (err) {
-      console.error('Failed to fetch catalog', err);
+      console.error('Network error fetching catalog:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCatalog();
+    const timer = setTimeout(() => {
+      fetchCatalog();
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(timer);
   }, [search, brandFilter]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/api/v1/admin/catalog/${editingId}` : '/api/v1/admin/catalog';
 
+    const payload = {
+      ...formData,
+      retailPrice: parseFloat(formData.retailPrice)
+    };
+
     try {
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          retailPrice: parseFloat(formData.retailPrice)
-        })
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.message || 'Operation failed');
+        // Parse Spring validation / IllegalArgumentException errors
+        const message = errData.message || (errData.errors ? Object.values(errData.errors).join(', ') : 'Operation failed');
+        throw new Error(message);
       }
 
       setIsModalOpen(false);
@@ -68,6 +112,8 @@ export default function AdminCatalogManager() {
       fetchCatalog();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -87,8 +133,16 @@ export default function AdminCatalogManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to deactivate this product?')) return;
     try {
-      await fetch(`/api/v1/admin/catalog/${id}`, { method: 'DELETE' });
-      fetchCatalog();
+      const res = await fetch(`/api/v1/admin/catalog/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (res.ok) {
+        fetchCatalog();
+      } else {
+        alert('Failed to deactivate product.');
+      }
     } catch (err) {
       console.error('Failed to delete product', err);
     }
@@ -106,6 +160,7 @@ export default function AdminCatalogManager() {
           onClick={() => {
             setEditingId(null);
             setFormData(INITIAL_FORM);
+            setError('');
             setIsModalOpen(true);
           }}
           className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition"
@@ -154,7 +209,14 @@ export default function AdminCatalogManager() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
-              {products.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="py-12 text-center text-slate-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    Loading catalog...
+                  </td>
+                </tr>
+              ) : products.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="py-8 text-center text-slate-500">
                     No master products found. Click "Add Master Product" to create one.
@@ -168,6 +230,9 @@ export default function AdminCatalogManager() {
                         src={item.imageUrl}
                         alt={item.name}
                         className="w-12 h-12 object-cover rounded-md bg-slate-900 border border-slate-700"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                        }}
                       />
                       <div>
                         <div className="font-semibold text-white">{item.name}</div>
@@ -176,7 +241,9 @@ export default function AdminCatalogManager() {
                     </td>
                     <td className="py-3 px-6 font-mono text-xs text-indigo-400">{item.sku}</td>
                     <td className="py-3 px-6">{item.brand}</td>
-                    <td className="py-3 px-6 font-medium text-emerald-400">${item.retailPrice.toFixed(2)}</td>
+                    <td className="py-3 px-6 font-medium text-emerald-400">
+                      ${item.retailPrice ? item.retailPrice.toFixed(2) : '0.00'}
+                    </td>
                     <td className="py-3 px-6 text-right space-x-2">
                       <button
                         onClick={() => handleEdit(item)}
@@ -221,10 +288,11 @@ export default function AdminCatalogManager() {
                   <input
                     type="text"
                     required
+                    disabled={!!editingId}
                     placeholder="e.g. DZ5485-052"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -271,6 +339,7 @@ export default function AdminCatalogManager() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0.01"
                     required
                     placeholder="180.00"
                     value={formData.retailPrice}
@@ -315,8 +384,10 @@ export default function AdminCatalogManager() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow transition"
+                  disabled={submitting}
+                  className="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow transition disabled:opacity-50 flex items-center gap-2"
                 >
+                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingId ? 'Save Changes' : 'Create Product'}
                 </button>
               </div>

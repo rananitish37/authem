@@ -25,11 +25,14 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      // Call your login action from Zustand (or API)
-      await login(formData.email, formData.password);
+      await login({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
       navigate('/browse');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+      setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }

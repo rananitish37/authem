@@ -1,14 +1,60 @@
 import { create } from 'zustand';
+import axios from 'axios';
+
+const API_BASE_URL = 'http://localhost:8081/api/v1/auth';
+
+const getInitialUser = () => {
+  try {
+    const stored = localStorage.getItem('user');
+    return stored && stored !== 'undefined' && stored !== 'null' ? JSON.parse(stored) : null;
+  } catch (e) {
+    return null;
+  }
+};
 
 export const useAuthStore = create((set) => ({
-  user: JSON.parse(localStorage.getItem('user')) || null,
+  user: getInitialUser(),
   token: localStorage.getItem('token') || null,
   isAuthenticated: !!localStorage.getItem('token'),
 
-  setAuth: (user, token) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
-    set({ user, token, isAuthenticated: true });
+  login: async (credentials) => {
+    const response = await axios.post(`${API_BASE_URL}/login`, credentials, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const { user, token } = response.data;
+
+    if (token) {
+      localStorage.setItem('token', token);
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      set({ user: user || null, token, isAuthenticated: true });
+    }
+
+    return response.data;
+  },
+
+  register: async (userData) => {
+    const response = await axios.post(`${API_BASE_URL}/register`, userData, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const { user, token } = response.data;
+
+    if (token) {
+      localStorage.setItem('token', token);
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      set({ user: user || null, token, isAuthenticated: true });
+    }
+
+    return response.data;
   },
 
   logout: () => {

@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Table(
-        name = "asks",
+        name = "auth_asks",
         indexes = {
                 @Index(name = "idx_asks_matching", columnList = "product_id, shoe_size, status, ask_price ASC, created_at ASC"),
                 @Index(name = "idx_asks_user", columnList = "user_id")
