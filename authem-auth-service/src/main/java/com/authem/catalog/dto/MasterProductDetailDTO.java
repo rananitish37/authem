@@ -1,10 +1,8 @@
 package com.authem.catalog.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 
-public record CatalogBrowseDTO(
+public record MasterProductDetailDTO(
         Long id,
         String sku,
         String name,
@@ -13,5 +11,7 @@ public record CatalogBrowseDTO(
         BigDecimal retailPrice,
         String imageUrl,
         BigDecimal lowestAskPrice,
-        BigDecimal highestBidPrice
+        BigDecimal highestBidPrice,
+        BigDecimal lastSalePrice,
+        Long totalSales // 🟢 Total number of units sold
 ) {}

@@ -11,7 +11,7 @@ import {
 export const ProductDetail = () => {
   const { id } = useParams();
 
-  // Dynamic state replacing static objects
+  // Dynamic state
   const [product, setProduct] = useState(null);
   const [sizeOptions, setSizeOptions] = useState([]);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -31,19 +31,30 @@ export const ProductDetail = () => {
         setLoading(true);
         setError(null);
 
-        // Replace endpoint URL with your actual backend URL
         const response = await fetch(`/api/v1/products/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch product details.');
         }
         const data = await response.json();
 
-        setProduct(data.product);
-        setSizeOptions(data.sizes || []);
+        setProduct(data);
 
-        // Default to first available size option if present
-        if (data.sizes && data.sizes.length > 0) {
-          setSelectedSize(data.sizes[0]);
+        // Map sizes array from response OR generate fallback size options
+        let sizes = data.sizes || [];
+        if (sizes.length === 0) {
+          const defaultSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12'];
+          sizes = defaultSizes.map((sz) => ({
+            size: sz,
+            lowestAskPrice: data.lowestAskPrice ?? 0,
+            highestBidPrice: data.highestBidPrice ?? 0
+          }));
+        }
+
+        setSizeOptions(sizes);
+
+        // Default to first available size
+        if (sizes.length > 0) {
+          setSelectedSize(sizes[0]);
         }
       } catch (err) {
         setError(err.message || 'Something went wrong');
@@ -57,9 +68,9 @@ export const ProductDetail = () => {
     }
   }, [id]);
 
-  // Derived current pricing based on selected size
-  const currentAsk = selectedSize?.lowestAsk || 0;
-  const currentBid = selectedSize?.highestBid || 0;
+  // Derived current pricing based on selected size or top-level product stats
+  const currentAsk = selectedSize?.lowestAskPrice ?? product?.lowestAskPrice ?? 0;
+  const currentBid = selectedSize?.highestBidPrice ?? product?.highestBidPrice ?? 0;
 
   // Handle Loading & Error States
   if (loading) {
@@ -149,8 +160,8 @@ export const ProductDetail = () => {
                 <p className="font-extrabold text-slate-900 dark:text-white">${product.retailPrice || 0}</p>
               </div>
               <div>
-                <p className="text-slate-400 dark:text-slate-400 font-bold uppercase">Release Date</p>
-                <p className="font-extrabold text-slate-900 dark:text-white">{product.releaseDate || 'N/A'}</p>
+                <p className="text-slate-400 dark:text-slate-400 font-bold uppercase">Brand</p>
+                <p className="font-extrabold text-slate-900 dark:text-white">{product.brand || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-slate-400 dark:text-slate-400 font-bold uppercase">Total Sales</p>
@@ -177,7 +188,9 @@ export const ProductDetail = () => {
             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-xl flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase text-slate-400">Last Sale</p>
-                <p className="text-2xl font-black text-slate-900 dark:text-white">${product.lastSale || 0}</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">
+                  {product.lastSalePrice ? `$${product.lastSalePrice}` : '--'}
+                </p>
               </div>
               <div className="text-right">
                 <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -200,6 +213,7 @@ export const ProductDetail = () => {
               <div className="grid grid-cols-3 gap-2">
                 {sizeOptions.map((item) => {
                   const isSelected = selectedSize?.size === item.size;
+                  const itemAsk = item.lowestAskPrice ?? item.lowestAsk ?? product.lowestAskPrice ?? 0;
                   return (
                     <button
                       key={item.size}
@@ -212,7 +226,7 @@ export const ProductDetail = () => {
                     >
                       <p className="text-xs font-black">{item.size}</p>
                       <p className={`text-[10px] font-bold mt-0.5 ${isSelected ? 'text-emerald-400 dark:text-emerald-600' : 'text-slate-500 dark:text-slate-400'}`}>
-                        ${item.lowestAsk}
+                        {itemAsk ? `$${itemAsk}` : '--'}
                       </p>
                     </button>
                   );
@@ -233,7 +247,7 @@ export const ProductDetail = () => {
                 className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-4 rounded-xl font-extrabold text-center transition-all shadow-md group"
               >
                 <p className="text-xs uppercase tracking-wider text-emerald-100 font-bold">Buy Now For</p>
-                <p className="text-2xl font-black">${currentAsk}</p>
+                <p className="text-2xl font-black">{currentAsk ? `$${currentAsk}` : '--'}</p>
                 <p className="text-[10px] text-emerald-100 mt-1 uppercase group-hover:underline">Or Place Bid</p>
               </button>
 
@@ -247,7 +261,7 @@ export const ProductDetail = () => {
                 className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-white p-4 rounded-xl font-extrabold text-center transition-all shadow-md group border border-transparent dark:border-slate-700"
               >
                 <p className="text-xs uppercase tracking-wider text-slate-300 font-bold">Sell Now For</p>
-                <p className="text-2xl font-black">${currentBid}</p>
+                <p className="text-2xl font-black">{currentBid ? `$${currentBid}` : '--'}</p>
                 <p className="text-[10px] text-slate-300 mt-1 uppercase group-hover:underline">Or Place Ask</p>
               </button>
 
@@ -316,9 +330,7 @@ export const ProductDetail = () => {
         </div>
       </div>
 
-      {/* ========================================== */}
       {/* BUY / PLACE BID MODAL */}
-      {/* ========================================== */}
       {activeModal === 'buy' && selectedSize && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 relative shadow-2xl border border-slate-200 dark:border-slate-700">
@@ -404,9 +416,7 @@ export const ProductDetail = () => {
         </div>
       )}
 
-      {/* ========================================== */}
       {/* SELL / PLACE ASK MODAL */}
-      {/* ========================================== */}
       {activeModal === 'sell' && selectedSize && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 relative shadow-2xl border border-slate-200 dark:border-slate-700">

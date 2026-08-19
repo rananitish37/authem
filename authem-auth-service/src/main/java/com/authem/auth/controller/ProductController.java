@@ -4,6 +4,8 @@ package com.authem.auth.controller;
 import com.authem.auth.model.Product;
 import com.authem.auth.repository.ProductRepository;
 import com.authem.catalog.dto.CatalogBrowseDTO;
+import com.authem.catalog.dto.MasterProductDetailDTO;
+import com.authem.catalog.entity.MasterProduct;
 import com.authem.catalog.service.MasterProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,13 +50,20 @@ public class ProductController {
         return ResponseEntity.ok(productService.getBrowseCatalog(search, brand, pageable));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id){
-//        Product product = productRepository.findById(id)
-//                .orElseThrow(()-> new IllegalArgumentException("Product Not Found"));
-//        return ResponseEntity.ok(product);
-        return productRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
+//    @GetMapping("/{id}")
+//    public ResponseEntity<Product> getProductById(@PathVariable Long id){
+////        Product product = productRepository.findById(id)
+////                .orElseThrow(()-> new IllegalArgumentException("Product Not Found"));
+////        return ResponseEntity.ok(product);
+//        return productRepository.findById(id)
+//                .map(ResponseEntity::ok)
+//                .orElse(ResponseEntity.notFound().build());
+//    }
+
+@GetMapping("/{id}")
+public ResponseEntity<MasterProductDetailDTO> getProductById(@PathVariable Long id) {
+    return productService.getMasterProductById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+}
 }

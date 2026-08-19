@@ -1,5 +1,6 @@
 package com.authem.listing.service.impl;
 
+import com.authem.catalog.dto.MasterProductDetailDTO;
 import com.authem.catalog.entity.MasterProduct;
 import com.authem.catalog.repository.MasterProductRepository;
 import com.authem.listing.dto.AskDTOs.*;
@@ -28,7 +29,6 @@ public class SellerAskServiceImpl implements SellerAskService {
 
         return products.map(product -> {
             BigDecimal lowestAsk = askRepository.findLowestAskByProduct(product.getId()).orElse(null);
-
             return new MasterProductSummaryDTO(
                     product.getId(),
                     product.getSku(),

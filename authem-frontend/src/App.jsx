@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Layout Components
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
-
+import { Profile } from './pages/Profile';
 // Pages
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
@@ -37,7 +37,7 @@ function App() {
                     <Route path="/admin/catalog" element={<AdminCatalogManager />} />
             </Route>
             <Route path="/seller/create-ask" element={<SellerCreateAsk />} />
-
+            <Route path="/profile" element={<Profile />} />
 
             <Route path="*" element={<Home />} />
           </Routes>

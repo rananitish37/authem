@@ -1,5 +1,7 @@
 package com.authem.catalog.repository;
 
+import com.authem.catalog.dto.CatalogBrowseDTO;
+import com.authem.catalog.dto.MasterProductDetailDTO;
 import com.authem.catalog.entity.MasterProduct;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

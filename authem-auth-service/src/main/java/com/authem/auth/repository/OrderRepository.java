@@ -18,6 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findBySellerId(Long sellerId);
 
+    // Spring Data JPA automatically traverses product.id for this method name
     List<Order> findByProductId(Long productId);
 
     List<Order> findByStatus(FulfillmentStatus status);
@@ -25,15 +26,31 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.buyerId = :userId OR o.sellerId = :userId ORDER BY o.createdAt DESC")
     List<Order> findAllUserOrders(@Param("userId") Long userId);
 
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.product.id = :masterId AND o.status = com.authem.auth.model.FulfillmentStatus.DELIVERED")
+    Long countTotalSalesByMasterId(@Param("masterId") Long masterId);
+
+
     @Query("""
         SELECT o.matchedPrice FROM Order o 
-        WHERE o.product.id = :productId 
-          AND o.shoeSize = :shoeSize 
+        WHERE o.product.id = :masterId 
+          AND o.status = com.authem.auth.model.FulfillmentStatus.DELIVERED
         ORDER BY o.createdAt DESC 
         LIMIT 1
     """)
-    Optional<BigDecimal> findLastSalePrice(
-            @Param("productId") Long productId,
+    Optional<BigDecimal> findLastSalePriceByMasterId(@Param("masterId") Long masterId);
+
+
+    @Query("""
+        SELECT o.matchedPrice FROM Order o 
+        WHERE o.product.id = :masterId 
+          AND o.shoeSize = :shoeSize 
+          AND o.status = com.authem.auth.model.FulfillmentStatus.DELIVERED
+        ORDER BY o.createdAt DESC 
+        LIMIT 1
+    """)
+    Optional<BigDecimal> findLastSalePriceByMasterIdAndSize(
+            @Param("masterId") Long masterId,
             @Param("shoeSize") String shoeSize
     );
 }

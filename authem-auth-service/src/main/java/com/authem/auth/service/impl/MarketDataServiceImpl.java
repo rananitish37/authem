@@ -21,7 +21,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     public MarketSummaryResponse getMarketSummary(Long productId, String shoeSize) {
         BigDecimal highestBid = bidRepository.findHighestBidPrice(productId, shoeSize).orElse(null);
         BigDecimal lowestAsk = askRepository.findLowestAskPrice(productId, shoeSize).orElse(null);
-        BigDecimal lastSalePrice = orderRepository.findLastSalePrice(productId, shoeSize).orElse(null);
+        BigDecimal lastSalePrice = orderRepository.findLastSalePriceByMasterId(productId).orElse(null);
 
         return MarketSummaryResponse.builder()
                 .productId(productId)

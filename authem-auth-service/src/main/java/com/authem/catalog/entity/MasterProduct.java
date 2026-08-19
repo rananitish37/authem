@@ -47,6 +47,12 @@ public class MasterProduct {
 
     private LocalDateTime updatedAt;
 
+    @Column(name = "lowest_ask_price", precision = 10, scale = 2)
+    private BigDecimal lowestAskPrice;
+
+    @Column(name = "highest_bid_price", precision = 10, scale = 2)
+    private BigDecimal highestBidPrice;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

@@ -1,12 +1,14 @@
 package com.authem.catalog.service.impl;
 
+import com.authem.auth.repository.BidRepository;
+import com.authem.auth.repository.OrderRepository;
 import com.authem.catalog.dto.CatalogBrowseDTO;
+import com.authem.catalog.dto.MasterProductDetailDTO;
 import com.authem.catalog.dto.ProductRequestDTO;
 import com.authem.catalog.entity.MasterProduct;
 import com.authem.catalog.repository.MasterProductRepository;
 import com.authem.catalog.service.MasterProductService;
 import com.authem.listing.repository.AskRepository;
-import com.authem.auth.repository.BidRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class MasterProductServiceImpl implements MasterProductService {
     private final MasterProductRepository productRepository;
     private final AskRepository askRepository;
     private final BidRepository bidRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     @Transactional
@@ -113,5 +117,31 @@ public class MasterProductServiceImpl implements MasterProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
         product.setActive(false);
         productRepository.save(product);
+    }
+
+    @Override
+    public Optional<MasterProductDetailDTO> getMasterProductById(Long id) {
+        return productRepository.findByIdAndActiveTrue(id)
+                .map(master -> {
+                    // Fetch dynamic market stats using matching repository method names
+                    BigDecimal lowestAsk = askRepository.findLowestAskByProduct(id).orElse(null);
+                    BigDecimal highestBid = bidRepository.findHighestBidByProduct(id).orElse(null);
+                    BigDecimal lastSale = orderRepository.findLastSalePriceByMasterId(id).orElse(null);
+                    Long totalSales = orderRepository.countTotalSalesByMasterId(id);
+
+                    return new MasterProductDetailDTO(
+                            master.getId(),
+                            master.getSku(),
+                            master.getName(),
+                            master.getBrand(),
+                            master.getColorway(),
+                            master.getRetailPrice(),
+                            master.getImageUrl(),
+                            lowestAsk,
+                            highestBid,
+                            lastSale,
+                            totalSales != null ? totalSales : 0L
+                    );
+                });
     }
 }
