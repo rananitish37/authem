@@ -36,13 +36,20 @@ export const AdminAddProduct = () => {
     setLoading(true);
 
     try {
-      // API call to Spring Boot Admin Endpoint
-      // await axios.post('/api/v1/admin/products', formData);
-
-      console.log('Submitting Product to Catalog:', formData);
-
-      // Simulate success delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:8081/api/v1/admin/catalog', {
+        sku: formData.sku.trim(),
+        name: formData.name.trim(),
+        brand: formData.brand.trim(),
+        colorway: formData.colorway?.trim() || '',
+        retailPrice: parseFloat(formData.retailPrice),
+        imageUrl: formData.imageUrl.trim()
+      }, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
 
       setSuccess(true);
       // Reset form after submission

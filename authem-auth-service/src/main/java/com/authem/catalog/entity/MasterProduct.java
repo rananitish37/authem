@@ -39,6 +39,7 @@ public class MasterProduct {
     @Column(nullable = false, length = 512)
     private String imageUrl;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
 

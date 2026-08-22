@@ -11,8 +11,8 @@
 	<groupId>com.authem</groupId>
 	<artifactId>authem-auth-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>Authem Auth Service</name>
+	<description>Authentication, wallet, and trading microservice for the Authem sneaker marketplace</description>
 	<url/>
 	<licenses>
 		<license/>

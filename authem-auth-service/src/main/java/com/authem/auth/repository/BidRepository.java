@@ -80,4 +80,17 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
     default Optional<BigDecimal> findHighestBidByProduct(Long productId) {
         return findHighestBidByProduct(productId, OrderStatus.PENDING);
     }
+
+    @Query("""
+        SELECT b FROM Bid b
+        WHERE b.product.id = :productId
+          AND (:shoeSize IS NULL OR b.shoeSize = :shoeSize)
+          AND b.status = :status
+        ORDER BY b.bidPrice DESC, b.createdAt ASC
+    """)
+    List<Bid> findActiveBidsByProductAndSize(
+            @Param("productId") Long productId,
+            @Param("shoeSize") String shoeSize,
+            @Param("status") OrderStatus status
+    );
 }

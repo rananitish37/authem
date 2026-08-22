@@ -44,7 +44,7 @@ class WalletServiceImplTest {
     @DisplayName("holdFunds - Success when balance is sufficient")
     void holdFunds_Success() {
         BigDecimal holdAmount = new BigDecimal("200.00");
-        when(walletRepository.findByUserId(100L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.findByUserIdWithLock(100L)).thenReturn(Optional.of(mockWallet));
         when(walletRepository.save(any(Wallet.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = walletService.holdFunds(100L, holdAmount);
@@ -58,7 +58,7 @@ class WalletServiceImplTest {
     @DisplayName("holdFunds - Throws InsufficientBalanceException when funds are low")
     void holdFunds_InsufficientBalance_ThrowsException() {
         BigDecimal holdAmount = new BigDecimal("600.00");
-        when(walletRepository.findByUserId(100L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.findByUserIdWithLock(100L)).thenReturn(Optional.of(mockWallet));
 
         assertThrows(InsufficientBalanceException.class, () ->
                 walletService.holdFunds(100L, holdAmount)
@@ -87,8 +87,8 @@ class WalletServiceImplTest {
         BigDecimal bidAmount = new BigDecimal("220.00");
         BigDecimal executionPrice = new BigDecimal("200.00"); // Matched at $200 -> $20 refund to buyer
 
-        when(walletRepository.findByUserId(100L)).thenReturn(Optional.of(buyerWallet));
-        when(walletRepository.findByUserId(200L)).thenReturn(Optional.of(sellerWallet));
+        when(walletRepository.findByUserIdWithLock(100L)).thenReturn(Optional.of(buyerWallet));
+        when(walletRepository.findByUserIdWithLock(200L)).thenReturn(Optional.of(sellerWallet));
 
         walletService.settleTrade(100L, 200L, bidAmount, executionPrice);
 

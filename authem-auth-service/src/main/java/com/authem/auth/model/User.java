@@ -29,7 +29,7 @@ import java.util.List;
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @NotBlank(message = "First name is required")
     @Column(name = "first_name", nullable = false, length = 50)

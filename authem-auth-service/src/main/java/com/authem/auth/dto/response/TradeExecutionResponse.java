@@ -1,7 +1,6 @@
 package com.authem.auth.dto.response;
 
 import com.authem.auth.model.OrderStatus;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;

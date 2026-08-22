@@ -79,10 +79,10 @@ public class WalletServiceImpl implements WalletService {
     @Override
     @Transactional
     public void settleTrade(Long buyerId, Long sellerId, BigDecimal bidAmount, BigDecimal executionPrice) {
-        Wallet buyerWallet = walletRepository.findByUserId(buyerId)
+        Wallet buyerWallet = walletRepository.findByUserIdWithLock(buyerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Buyer wallet not found"));
 
-        Wallet sellerWallet = walletRepository.findByUserId(sellerId)
+        Wallet sellerWallet = walletRepository.findByUserIdWithLock(sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller wallet not found"));
 
         if (buyerWallet.getFrozenBalance().compareTo(bidAmount) < 0) {
@@ -122,7 +122,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private Wallet findWalletOrThrow(Long userId) {
-        return walletRepository.findByUserId(userId)
+        return walletRepository.findByUserIdWithLock(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wallet not found for user ID: " + userId));
     }
 }
