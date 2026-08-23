@@ -17,6 +17,7 @@ public class OrderResponse {
     private Long orderId;
     private Long productId;
     private String productName;
+    private String productImageUrl;
     private String shoeSize;
     private BigDecimal price;
     private Long buyerId;

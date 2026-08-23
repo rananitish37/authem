@@ -39,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
                 .orderId(order.getId())
                 .productId(order.getProduct().getId())
                 .productName(order.getProduct().getName())
+                .productImageUrl(order.getProduct().getImageUrl())
                 .shoeSize(order.getShoeSize())
                 .price(order.getMatchedPrice())
                 .buyerId(order.getBuyerId())

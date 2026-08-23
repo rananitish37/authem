@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
   TrendingUp,
   ArrowLeft,
   X,
-  Loader2
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
+import axios from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { token, user } = useAuthStore();
 
   // Dynamic state
   const [product, setProduct] = useState(null);
@@ -18,11 +26,17 @@ export const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Market stats for selected size
+  const [sizeMarketData, setSizeMarketData] = useState(null);
+
   // UI Interactive state
   const [timeframe, setTimeframe] = useState('3M');
-  const [activeModal, setActiveModal] = useState(null); // 'buy' | 'sell' | null
+  const [activeModal, setActiveModal] = useState(null); // 'buy' | 'sell' | 'success' | null
   const [tradeType, setTradeType] = useState('instant'); // 'instant' | 'custom'
   const [customPrice, setCustomPrice] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [tradeResult, setTradeResult] = useState(null);
 
   // Fetch product data on mount/route change
   useEffect(() => {
@@ -39,20 +53,16 @@ export const ProductDetail = () => {
 
         setProduct(data);
 
-        // Map sizes array from response OR generate fallback size options
-        let sizes = data.sizes || [];
-        if (sizes.length === 0) {
-          const defaultSizes = ['8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12'];
-          sizes = defaultSizes.map((sz) => ({
-            size: sz,
-            lowestAskPrice: data.lowestAskPrice ?? 0,
-            highestBidPrice: data.highestBidPrice ?? 0
-          }));
-        }
+        // Generate size options from 7 to 13 (US Men)
+        const defaultSizes = ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13'];
+        const sizes = defaultSizes.map((sz) => ({
+          size: sz,
+          lowestAskPrice: data.lowestAskPrice ?? 0,
+          highestBidPrice: data.highestBidPrice ?? 0
+        }));
 
         setSizeOptions(sizes);
 
-        // Default to first available size
         if (sizes.length > 0) {
           setSelectedSize(sizes[0]);
         }
@@ -68,9 +78,96 @@ export const ProductDetail = () => {
     }
   }, [id]);
 
+  // Fetch real-time market summary when size selection changes
+  useEffect(() => {
+    if (!id || !selectedSize) return;
+
+    const fetchMarketSummary = async () => {
+      try {
+        const res = await fetch(`/api/v1/market-data/products/${id}/summary?shoeSize=${selectedSize.size}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSizeMarketData(data);
+        }
+      } catch (e) {
+        // Silent fallback to parent product stats
+      }
+    };
+
+    fetchMarketSummary();
+  }, [id, selectedSize, token]);
+
   // Derived current pricing based on selected size or top-level product stats
-  const currentAsk = selectedSize?.lowestAskPrice ?? product?.lowestAskPrice ?? 0;
-  const currentBid = selectedSize?.highestBidPrice ?? product?.highestBidPrice ?? 0;
+  const currentAsk = sizeMarketData?.lowestAsk ?? product?.lowestAskPrice ?? 0;
+  const currentBid = sizeMarketData?.highestBid ?? product?.highestBidPrice ?? 0;
+
+  // Handle Buy / Place Bid submission
+  const handlePlaceBid = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const price = tradeType === 'instant' ? currentAsk : parseFloat(customPrice);
+    if (!price || price <= 0) {
+      setModalError('Please specify a valid bid price.');
+      return;
+    }
+
+    setSubmitting(true);
+    setModalError('');
+    try {
+      const res = await axios.post('/api/v1/trading/bids', {
+        productId: product.id,
+        shoeSize: selectedSize.size,
+        bidPrice: price
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setTradeResult(res.data);
+      setActiveModal('success');
+    } catch (err) {
+      setModalError(err.response?.data?.message || 'Transaction failed. Please check your wallet balance.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle Sell / Place Ask submission
+  const handlePlaceAsk = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    const price = tradeType === 'instant' ? currentBid : parseFloat(customPrice);
+    if (!price || price <= 0) {
+      setModalError('Please specify a valid asking price.');
+      return;
+    }
+
+    setSubmitting(true);
+    setModalError('');
+    try {
+      const res = await axios.post('/api/v1/trading/asks', {
+        productId: product.id,
+        shoeSize: selectedSize.size,
+        askPrice: price
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setTradeResult(res.data);
+      setActiveModal('success');
+    } catch (err) {
+      setModalError(err.response?.data?.message || 'Transaction failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Handle Loading & Error States
   if (loading) {
@@ -78,7 +175,7 @@ export const ProductDetail = () => {
       <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Loading Product Details...</p>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Loading Sneaker Details...</p>
         </div>
       </div>
     );
@@ -175,7 +272,7 @@ export const ProductDetail = () => {
             <div className="space-y-3">
               <h3 className="font-extrabold text-lg text-slate-900 dark:text-white uppercase tracking-wide">Product Details</h3>
               <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-normal">
-                {product.description || 'No description available for this item.'}
+                {product.colorway ? `Official colorway: ${product.colorway}. Verified authentic limited-edition sneaker release.` : 'Verified authentic limited edition sneaker release with physical authentication guarantee.'}
               </p>
             </div>
 
@@ -194,7 +291,7 @@ export const ProductDetail = () => {
               </div>
               <div className="text-right">
                 <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  <TrendingUp className="w-3.5 h-3.5" /> +${product.changePrice || 0} ({product.changePercent || '0%'})
+                  <TrendingUp className="w-3.5 h-3.5" /> Market Verified
                 </span>
               </div>
             </div>
@@ -205,29 +302,28 @@ export const ProductDetail = () => {
                 <label className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
                   Select Size (US Men)
                 </label>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline">
-                  Size Guide
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  Selected: Size {selectedSize?.size || 'None'}
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {sizeOptions.map((item) => {
                   const isSelected = selectedSize?.size === item.size;
-                  const itemAsk = item.lowestAskPrice ?? item.lowestAsk ?? product.lowestAskPrice ?? 0;
                   return (
                     <button
                       key={item.size}
-                      onClick={() => setSelectedSize(item)}
+                      onClick={() => {
+                        setSelectedSize(item);
+                        setCustomPrice('');
+                      }}
                       className={`p-2.5 rounded-lg border text-center transition-all ${
                         isSelected
-                          ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-slate-100 dark:text-slate-900 shadow-md'
+                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-md'
                           : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:border-slate-400 dark:hover:border-slate-500'
                       }`}
                     >
                       <p className="text-xs font-black">{item.size}</p>
-                      <p className={`text-[10px] font-bold mt-0.5 ${isSelected ? 'text-emerald-400 dark:text-emerald-600' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {itemAsk ? `$${itemAsk}` : '--'}
-                      </p>
                     </button>
                   );
                 })}
@@ -241,8 +337,9 @@ export const ProductDetail = () => {
               <button
                 disabled={!selectedSize}
                 onClick={() => {
-                  setActiveModal('buy');
+                  setModalError('');
                   setTradeType('instant');
+                  setActiveModal('buy');
                 }}
                 className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-4 rounded-xl font-extrabold text-center transition-all shadow-md group"
               >
@@ -255,8 +352,9 @@ export const ProductDetail = () => {
               <button
                 disabled={!selectedSize}
                 onClick={() => {
-                  setActiveModal('sell');
+                  setModalError('');
                   setTradeType('instant');
+                  setActiveModal('sell');
                 }}
                 className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-white p-4 rounded-xl font-extrabold text-center transition-all shadow-md group border border-transparent dark:border-slate-700"
               >
@@ -267,50 +365,19 @@ export const ProductDetail = () => {
 
             </div>
 
-            {/* Price History Chart */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-5 space-y-4 bg-white dark:bg-slate-800/40">
-              <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-sm uppercase text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" /> Price History
-                </h4>
-
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-bold">
-                  {['1M', '3M', '6M', '1Y', 'ALL'].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeframe(tf)}
-                      className={`px-2.5 py-1 rounded-md transition-colors ${
-                        timeframe === tf
-                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      {tf}
-                    </button>
-                  ))}
-                </div>
+            {/* Market Depth Summary */}
+            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+              <div>
+                <span className="text-slate-400 font-bold uppercase block">Highest Bid</span>
+                <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                  {currentBid ? `$${currentBid}` : 'No Bids'}
+                </p>
               </div>
-
-              <div className="h-40 w-full pt-4 flex items-end">
-                <svg viewBox="0 0 400 120" className="w-full h-full overflow-visible">
-                  <path
-                    d="M 0 90 Q 60 70, 120 80 T 240 40 T 360 20 L 400 35"
-                    fill="none"
-                    stroke="#10B981"
-                    strokeWidth="3"
-                  />
-                  <path
-                    d="M 0 90 Q 60 70, 120 80 T 240 40 T 360 20 L 400 35 L 400 120 L 0 120 Z"
-                    fill="url(#greenGradient)"
-                    opacity="0.15"
-                  />
-                  <defs>
-                    <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10B981" />
-                      <stop offset="100%" stopColor="transparent" />
-                    </linearGradient>
-                  </defs>
-                </svg>
+              <div>
+                <span className="text-slate-400 font-bold uppercase block">Lowest Ask</span>
+                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {currentAsk ? `$${currentAsk}` : 'No Asks'}
+                </p>
               </div>
             </div>
 
@@ -347,6 +414,13 @@ export const ProductDetail = () => {
               <h3 className="text-xl font-black text-slate-900 dark:text-white">{product.name}</h3>
             </div>
 
+            {modalError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2 text-xs text-red-600 dark:text-red-400 font-bold">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl font-extrabold text-xs">
               <button
                 onClick={() => setTradeType('instant')}
@@ -354,7 +428,7 @@ export const ProductDetail = () => {
                   tradeType === 'instant' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500'
                 }`}
               >
-                Buy Now (${currentAsk})
+                Buy Now (${currentAsk || '--'})
               </button>
               <button
                 onClick={() => setTradeType('custom')}
@@ -362,7 +436,7 @@ export const ProductDetail = () => {
                   tradeType === 'custom' ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-sm' : 'text-slate-500'
                 }`}
               >
-                Place Bid
+                Place Custom Bid
               </button>
             </div>
 
@@ -371,7 +445,7 @@ export const ProductDetail = () => {
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase">Your Custom Bid ($)</label>
                 <input
                   type="number"
-                  placeholder={`Higher than $${currentBid}`}
+                  placeholder={`Higher than $${currentBid || 0}`}
                   value={customPrice}
                   onChange={(e) => setCustomPrice(e.target.value)}
                   className="w-full bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-lg px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:outline-none"
@@ -380,7 +454,9 @@ export const ProductDetail = () => {
             ) : (
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-center">
                 <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">Immediate Purchase Price</p>
-                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">${currentAsk}</p>
+                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                  {currentAsk ? `$${currentAsk}` : 'No active asks — place a bid instead'}
+                </p>
               </div>
             )}
 
@@ -390,26 +466,24 @@ export const ProductDetail = () => {
                 <span>${tradeType === 'instant' ? currentAsk : Number(customPrice) || 0}</span>
               </div>
               <div className="flex justify-between text-slate-600 dark:text-slate-400 font-semibold">
-                <span>Processing Fee (3%)</span>
-                <span>${Math.round((tradeType === 'instant' ? currentAsk : Number(customPrice) || 0) * 0.03)}</span>
-              </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-400 font-semibold">
-                <span>Verification Shipping</span>
+                <span>Processing & Verification</span>
                 <span>$14.50</span>
               </div>
               <div className="flex justify-between text-slate-900 dark:text-white font-black text-sm pt-2 border-t border-slate-200 dark:border-slate-700">
-                <span>Total Payment</span>
+                <span>Total Escrow Deduction</span>
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  ${(tradeType === 'instant' ? currentAsk : Number(customPrice) || 0) + Math.round((tradeType === 'instant' ? currentAsk : Number(customPrice) || 0) * 0.03) + 14.50}
+                  ${(tradeType === 'instant' ? currentAsk : Number(customPrice) || 0) + 14.50}
                 </span>
               </div>
             </div>
 
             <button
-              onClick={() => setActiveModal(null)}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-wider transition-all shadow-md"
+              disabled={submitting || (tradeType === 'instant' && !currentAsk) || (tradeType === 'custom' && !customPrice)}
+              onClick={handlePlaceBid}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
             >
-              {tradeType === 'instant' ? 'Confirm Purchase' : 'Submit Bid'}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {tradeType === 'instant' ? 'Confirm Purchase' : 'Submit Bid to Order Book'}
             </button>
 
           </div>
@@ -433,6 +507,13 @@ export const ProductDetail = () => {
               <h3 className="text-xl font-black text-slate-900 dark:text-white">{product.name}</h3>
             </div>
 
+            {modalError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-2 text-xs text-red-600 dark:text-red-400 font-bold">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl font-extrabold text-xs">
               <button
                 onClick={() => setTradeType('instant')}
@@ -440,7 +521,7 @@ export const ProductDetail = () => {
                   tradeType === 'instant' ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-sm' : 'text-slate-500'
                 }`}
               >
-                Sell Now (${currentBid})
+                Sell Now (${currentBid || '--'})
               </button>
               <button
                 onClick={() => setTradeType('custom')}
@@ -448,7 +529,7 @@ export const ProductDetail = () => {
                   tradeType === 'custom' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500'
                 }`}
               >
-                Place Ask
+                Place Custom Ask
               </button>
             </div>
 
@@ -457,7 +538,7 @@ export const ProductDetail = () => {
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase">Your Asking Price ($)</label>
                 <input
                   type="number"
-                  placeholder={`Lower than $${currentAsk}`}
+                  placeholder={`Lower than $${currentAsk || 999}`}
                   value={customPrice}
                   onChange={(e) => setCustomPrice(e.target.value)}
                   className="w-full bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-lg px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:border-emerald-500 focus:outline-none"
@@ -466,7 +547,9 @@ export const ProductDetail = () => {
             ) : (
               <div className="p-4 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-center">
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Immediate Payout Price</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">${currentBid}</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">
+                  {currentBid ? `$${currentBid}` : 'No active bids — place an ask instead'}
+                </p>
               </div>
             )}
 
@@ -479,24 +562,80 @@ export const ProductDetail = () => {
                 <span>Seller Fee (9.5%)</span>
                 <span>-${Math.round((tradeType === 'instant' ? currentBid : Number(customPrice) || 0) * 0.095)}</span>
               </div>
-              <div className="flex justify-between text-slate-600 dark:text-slate-400 font-semibold">
-                <span>Payment Processing (3%)</span>
-                <span>-${Math.round((tradeType === 'instant' ? currentBid : Number(customPrice) || 0) * 0.03)}</span>
-              </div>
               <div className="flex justify-between text-slate-900 dark:text-white font-black text-sm pt-2 border-t border-slate-200 dark:border-slate-700">
                 <span>Net Estimated Payout</span>
                 <span className="text-emerald-600 dark:text-emerald-400">
-                  ${Math.max(0, (tradeType === 'instant' ? currentBid : Number(customPrice) || 0) - Math.round((tradeType === 'instant' ? currentBid : Number(customPrice) || 0) * 0.125))}
+                  ${Math.max(0, (tradeType === 'instant' ? currentBid : Number(customPrice) || 0) - Math.round((tradeType === 'instant' ? currentBid : Number(customPrice) || 0) * 0.095))}
                 </span>
               </div>
             </div>
 
             <button
-              onClick={() => setActiveModal(null)}
-              className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-wider transition-all shadow-md"
+              disabled={submitting || (tradeType === 'instant' && !currentBid) || (tradeType === 'custom' && !customPrice)}
+              onClick={handlePlaceAsk}
+              className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
             >
-              {tradeType === 'instant' ? 'Confirm Instant Sale' : 'Submit Ask'}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              {tradeType === 'instant' ? 'Confirm Instant Sale' : 'Submit Ask to Marketplace'}
             </button>
+
+          </div>
+        </div>
+      )}
+
+      {/* SUCCESS CONFIRMATION MODAL */}
+      {activeModal === 'success' && tradeResult && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-8 text-center space-y-6 relative shadow-2xl border border-slate-200 dark:border-slate-700">
+
+            <div className="w-16 h-16 bg-emerald-500/10 border-2 border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-500">
+              <CheckCircle2 className="w-10 h-10" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                {tradeResult.orderStatus === 'MATCHED' ? 'Trade Matched & Executed!' : 'Bid / Ask Placed!'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {tradeResult.message}
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+              <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+                <span>Product</span>
+                <span className="font-extrabold text-slate-900 dark:text-white">{product.name}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+                <span>Size</span>
+                <span className="font-extrabold text-slate-900 dark:text-white">US {tradeResult.shoeSize}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400">
+                <span>Execution / Bid Price</span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">${tradeResult.executionPrice}</span>
+              </div>
+              {tradeResult.orderId && (
+                <div className="flex justify-between font-semibold text-slate-600 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span>Order Number</span>
+                  <span className="font-extrabold text-slate-900 dark:text-white">#{tradeResult.orderId}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to="/profile"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase py-3 rounded-xl transition-all"
+              >
+                View in Profile
+              </Link>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-extrabold text-xs uppercase py-3 rounded-xl transition-all"
+              >
+                Keep Browsing
+              </button>
+            </div>
 
           </div>
         </div>

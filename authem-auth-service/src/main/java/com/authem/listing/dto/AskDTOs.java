@@ -34,6 +34,19 @@ public class AskDTOs {
             String createdAt
     ) {}
 
+    public record UserAskResponseDTO(
+            Long askId,
+            Long masterProductId,
+            String productName,
+            String productImageUrl,
+            Long sellerId,
+            String size,
+            BigDecimal askPrice,
+            ItemCondition condition,
+            String status,
+            String createdAt
+    ) {}
+
     public record MasterProductSummaryDTO(
             Long id,
             String sku,

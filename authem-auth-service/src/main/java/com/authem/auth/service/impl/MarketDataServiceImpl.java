@@ -3,10 +3,10 @@ package com.authem.auth.service.impl;
 import com.authem.auth.dto.response.BidResponse;
 import com.authem.auth.dto.response.MarketSummaryResponse;
 import com.authem.auth.model.OrderStatus;
-import com.authem.auth.repository.AskRepository;
 import com.authem.auth.repository.BidRepository;
 import com.authem.auth.repository.OrderRepository;
 import com.authem.auth.service.MarketDataService;
+import com.authem.listing.repository.AskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +43,7 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
     public MarketSummaryResponse getMarketSummary(Long productId, String shoeSize) {
         BigDecimal highestBid = bidRepository.findHighestBidPrice(productId, shoeSize).orElse(null);
-        BigDecimal lowestAsk = askRepository.findLowestAskPrice(productId, shoeSize).orElse(null);
+        BigDecimal lowestAsk = askRepository.findLowestAskByProductAndSize(productId, shoeSize).orElse(null);
         BigDecimal lastSalePrice = orderRepository.findLastSalePriceByMasterId(productId).orElse(null);
 
         return MarketSummaryResponse.builder()

@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 public class BidResponse {
     private Long id;
     private Long productId;
+    private String productName;
+    private String productImageUrl;
     private String shoeSize;
     private BigDecimal bidPrice;
     private String status;

@@ -3,8 +3,14 @@ package com.authem.auth.service;
 import com.authem.auth.dto.request.PlaceBidRequest;
 import com.authem.auth.dto.response.TradeExecutionResponse;
 import com.authem.auth.model.*;
-import com.authem.auth.repository.*;
+import com.authem.auth.repository.BidRepository;
+import com.authem.auth.repository.OrderRepository;
 import com.authem.auth.service.impl.OrderMatchingServiceImpl;
+import com.authem.catalog.entity.MasterProduct;
+import com.authem.catalog.repository.MasterProductRepository;
+import com.authem.listing.entity.Ask;
+import com.authem.listing.entity.Ask.AskStatus;
+import com.authem.listing.repository.AskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +29,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderMatchingServiceImplTest {
 
-    @Mock private ProductRepository productRepository;
+    @Mock private MasterProductRepository productRepository;
     @Mock private BidRepository bidRepository;
     @Mock private AskRepository askRepository;
     @Mock private OrderRepository orderRepository;
@@ -32,11 +38,11 @@ class OrderMatchingServiceImplTest {
     @InjectMocks
     private OrderMatchingServiceImpl orderMatchingService;
 
-    private Product mockProduct;
+    private MasterProduct mockProduct;
 
     @BeforeEach
     void setUp() {
-        mockProduct = Product.builder()
+        mockProduct = MasterProduct.builder()
                 .id(1L)
                 .name("Air Jordan 1 Retro High")
                 .sku("AJ1-001")
@@ -78,11 +84,11 @@ class OrderMatchingServiceImplTest {
 
         Ask matchingAsk = Ask.builder()
                 .id(5L)
-                .userId(200L)
-                .product(mockProduct)
-                .shoeSize("10.5")
+                .sellerId(200L)
+                .masterProductId(1L)
+                .size("10.5")
                 .askPrice(new BigDecimal("200.00"))
-                .status(OrderStatus.PENDING)
+                .status(AskStatus.ACTIVE)
                 .build();
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(mockProduct));

@@ -1,5 +1,6 @@
 package com.authem.listing.entity;
 
+import com.authem.catalog.entity.MasterProduct;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -24,6 +25,10 @@ public class Ask {
     @Column(name = "master_product_id", nullable = false)
     private Long masterProductId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "master_product_id", insertable = false, updatable = false)
+    private MasterProduct product;
+
     @Column(name = "seller_id", nullable = false)
     private Long sellerId;
 
@@ -35,11 +40,13 @@ public class Ask {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
-    private ItemCondition condition; // NEW_BOX, GOOD_BOX, NO_BOX, USED
+    @Builder.Default
+    private ItemCondition condition = ItemCondition.NEW_BOX; // NEW_BOX, GOOD_BOX, NO_BOX, USED
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
-    private AskStatus status; // ACTIVE, MATCHED, CANCELLED, EXPIRED
+    @Builder.Default
+    private AskStatus status = AskStatus.ACTIVE; // ACTIVE, MATCHED, CANCELLED, EXPIRED
 
     @Column(length = 255)
     private String notes;
@@ -60,6 +67,15 @@ public class Ask {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    // Alias methods for compatibility with trading engine
+    public Long getUserId() {
+        return this.sellerId;
+    }
+
+    public String getShoeSize() {
+        return this.size;
     }
 
     public enum ItemCondition {

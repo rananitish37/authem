@@ -1,6 +1,6 @@
 package com.authem.auth.model;
 
-
+import com.authem.catalog.entity.MasterProduct;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,7 +33,7 @@ public class Bid {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    private MasterProduct product;
 
     @Column(name = "shoe_size", nullable = false, length = 10)
     private String shoeSize; // e.g., "10.5", "11"

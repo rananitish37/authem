@@ -1,5 +1,7 @@
 package com.authem.auth.model;
 
+import com.authem.catalog.entity.MasterProduct;
+import com.authem.listing.entity.Ask;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -35,7 +37,7 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    private MasterProduct product;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bid_id", nullable = false)
