@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Shield -->
+  <path d="M50 5 L90 25 V75 L50 95 L10 75 V25 Z" fill="#0f172a" />
+  <!-- Inner 'A' shape -->
+  <path d="M32 70 L50 28 L68 70 H56 L50 54 L44 70 H32 Z" fill="#FFFFFF" />
+  <!-- Green accent slash -->
+  <path d="M42 50 L50 38 L78 22 L58 48 L48 42 L42 50 Z" fill="#00805D" />
+</svg>
