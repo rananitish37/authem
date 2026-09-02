@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, Edit3, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore'; // 👈 Adjust import path to your store file
+import API from '../../services/api';
 
 const INITIAL_FORM = {
   sku: '',
@@ -22,48 +22,22 @@ export default function AdminCatalogManager() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [error, setError] = useState('');
 
-  // Helper to get auth headers (JWT or standard token)
-  const getAuthHeaders = () => {
-    let token = useAuthStore.getState().token;
-    if (!token) {
-      try {
-        const persisted = JSON.parse(localStorage.getItem('auth-storage'));
-        token = persisted?.state?.token;
-      } catch (e) {
-      }
-    }
-
-    if (!token) {
-      token = localStorage.getItem('token') || localStorage.getItem('jwt');
-    }
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-  };
-
   // Fetch Master Catalog with Search & Filter
   const fetchCatalog = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        search: search.trim(),
-        brand: brandFilter,
-        page: '0',
-        size: '20',
-        sort: 'id,desc'
+      const res = await API.get('/v1/admin/catalog', {
+        params: {
+          search: search.trim(),
+          brand: brandFilter,
+          page: 0,
+          size: 20,
+          sort: 'id,desc'
+        }
       });
 
-      const response = await fetch(`/api/v1/admin/catalog?${params.toString()}`, {
-        headers: getAuthHeaders()
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.content || []);
-      } else {
-        console.error('Failed to fetch catalog:', response.statusText);
-      }
+      const data = res.data;
+      setProducts(Array.isArray(data) ? data : (data.content || []));
     } catch (err) {
       console.error('Network error fetching catalog:', err);
     } finally {
@@ -84,26 +58,16 @@ export default function AdminCatalogManager() {
     setError('');
     setSubmitting(true);
 
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/v1/admin/catalog/${editingId}` : '/api/v1/admin/catalog';
-
     const payload = {
       ...formData,
       retailPrice: parseFloat(formData.retailPrice)
     };
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        // Parse Spring validation / IllegalArgumentException errors
-        const message = errData.message || (errData.errors ? Object.values(errData.errors).join(', ') : 'Operation failed');
-        throw new Error(message);
+      if (editingId) {
+        await API.put(`/v1/admin/catalog/${editingId}`, payload);
+      } else {
+        await API.post('/v1/admin/catalog', payload);
       }
 
       setIsModalOpen(false);
@@ -111,7 +75,8 @@ export default function AdminCatalogManager() {
       setEditingId(null);
       fetchCatalog();
     } catch (err) {
-      setError(err.message);
+      const message = err.response?.data?.message || (err.response?.data?.errors ? Object.values(err.response.data.errors).join(', ') : 'Operation failed');
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -133,18 +98,11 @@ export default function AdminCatalogManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to deactivate this product?')) return;
     try {
-      const res = await fetch(`/api/v1/admin/catalog/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-
-      if (res.ok) {
-        fetchCatalog();
-      } else {
-        alert('Failed to deactivate product.');
-      }
+      await API.delete(`/v1/admin/catalog/${id}`);
+      fetchCatalog();
     } catch (err) {
       console.error('Failed to delete product', err);
+      alert(err.response?.data?.message || 'Failed to deactivate product.');
     }
   };
 

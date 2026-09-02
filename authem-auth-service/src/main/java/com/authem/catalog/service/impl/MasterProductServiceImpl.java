@@ -121,7 +121,7 @@ public class MasterProductServiceImpl implements MasterProductService {
 
     @Override
     public Optional<MasterProductDetailDTO> getMasterProductById(Long id) {
-        return productRepository.findByIdAndActiveTrue(id)
+        return productRepository.findActiveById(id)
                 .map(master -> {
                     // Fetch dynamic market stats using matching repository method names
                     BigDecimal lowestAsk = askRepository.findLowestAskByProduct(id).orElse(null);

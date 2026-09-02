@@ -1,7 +1,5 @@
 package com.authem.catalog.repository;
 
-import com.authem.catalog.dto.CatalogBrowseDTO;
-import com.authem.catalog.dto.MasterProductDetailDTO;
 import com.authem.catalog.entity.MasterProduct;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +19,12 @@ public interface MasterProductRepository extends JpaRepository<MasterProduct, Lo
 
     Optional<MasterProduct> findByIdAndActiveTrue(Long id);
 
+    @Query("SELECT p FROM MasterProduct p WHERE (p.active IS NULL OR p.active = true) AND p.id = :id")
+    Optional<MasterProduct> findActiveById(@Param("id") Long id);
+
     @Query("""
         SELECT p FROM MasterProduct p 
-        WHERE p.active = true 
+        WHERE (p.active IS NULL OR p.active = true)
           AND (:brand IS NULL OR :brand = '' OR LOWER(p.brand) = LOWER(:brand))
           AND (
             :search IS NULL OR :search = '' 

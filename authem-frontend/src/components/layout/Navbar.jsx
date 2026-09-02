@@ -71,14 +71,12 @@ export const Navbar = () => {
             </Link>
 
             {/* Main Seller Button */}
-            {isAuthenticated && user?.role === 'ROLE_USER' && (
-              <Link
-                to="/seller/create-ask"
-                className="px-4 py-1.5 text-xs font-bold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
-              >
-                Sell
-              </Link>
-            )}
+            <Link
+              to="/seller/create-ask"
+              className="px-4 py-1.5 text-xs font-bold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+            >
+              Sell
+            </Link>
 
             {/* Dark / Light Theme Switcher */}
             <ThemeToggle />
@@ -204,15 +202,13 @@ export const Navbar = () => {
             Browse All
           </Link>
 
-          {isAuthenticated && user?.role === 'ROLE_USER' && (
-            <Link
-              to="/seller/create-ask"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-base font-bold text-emerald-600 dark:text-emerald-400 py-2"
-            >
-              Sell / Create Ask
-            </Link>
-          )}
+          <Link
+            to="/seller/create-ask"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-base font-bold text-emerald-600 dark:text-emerald-400 py-2"
+          >
+            Sell / Create Ask
+          </Link>
 
           <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
             {isAuthenticated ? (

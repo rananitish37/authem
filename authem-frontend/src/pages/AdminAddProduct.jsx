@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Image, Tag, DollarSign, Calendar, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
-import axios from 'axios';
+import API from '../services/api';
 
 const BRANDS = ['Nike', 'Jordan', 'adidas', 'New Balance', 'ASICS', 'Puma', 'Fear of God', 'Supreme'];
 const CATEGORIES = ['Sneakers', 'Shoes', 'Apparel', 'Electronics', 'Collectibles', 'Accessories'];
@@ -36,19 +36,13 @@ export const AdminAddProduct = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:8081/api/v1/admin/catalog', {
+      await API.post('/v1/admin/catalog', {
         sku: formData.sku.trim(),
         name: formData.name.trim(),
         brand: formData.brand.trim(),
         colorway: formData.colorway?.trim() || '',
         retailPrice: parseFloat(formData.retailPrice),
         imageUrl: formData.imageUrl.trim()
-      }, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
       });
 
       setSuccess(true);

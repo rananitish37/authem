@@ -45,7 +45,7 @@ public class SellerAskServiceImpl implements SellerAskService {
     @Override
     @Transactional
     public AskResponseDTO createAsk(Long sellerId, CreateAskRequestDTO request) {
-        MasterProduct masterProduct = masterProductRepository.findByIdAndActiveTrue(request.masterProductId())
+        MasterProduct masterProduct = masterProductRepository.findActiveById(request.masterProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Master product not found or inactive: " + request.masterProductId()));
 
         Ask ask = Ask.builder()

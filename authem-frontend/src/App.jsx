@@ -30,8 +30,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/productdetails/:id" element={<ProductDetail />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/productdetails/:id" element={<ProductDetail />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
             <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
                     <Route path="/admin/add-product" element={<AdminAddProduct />} />
                     <Route path="/admin/catalog" element={<AdminCatalogManager />} />

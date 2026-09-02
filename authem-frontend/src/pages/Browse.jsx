@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Loader2
 } from 'lucide-react';
+import API from '../services/api';
 
 const BRANDS = ['Nike', 'Jordan', 'adidas', 'New Balance', 'ASICS'];
 const CATEGORIES = ['Men', 'Women', 'Unisex', 'Kids'];
@@ -44,13 +45,8 @@ export const Browse = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('http://localhost:8081/api/v1/products/browse');
-
-        if (!response.ok) {
-          throw new Error(`Server returned status ${response.status}`);
-        }
-
-        const data = await response.json();
+        const response = await API.get('/v1/products/browse');
+        const data = response.data;
         const rawItems = Array.isArray(data) ? data : (data.content || []);
 
         const mappedProducts = rawItems.map((item) => {

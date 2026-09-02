@@ -24,7 +24,6 @@ public class MarketDataServiceImpl implements MarketDataService {
     @Override
     @Transactional(readOnly = true)
     public List<BidResponse> getActiveBids(Long productId, String shoeSize) {
-        // Sanitize string if empty string was passed from UI
         String sanitizedSize = (shoeSize != null && !shoeSize.isBlank()) ? shoeSize : null;
 
         return bidRepository.findActiveBidsByProductAndSize(productId, sanitizedSize, OrderStatus.PENDING)
@@ -32,6 +31,8 @@ public class MarketDataServiceImpl implements MarketDataService {
                 .map(bid -> BidResponse.builder()
                         .id(bid.getId())
                         .productId(bid.getProduct().getId())
+                        .productName(bid.getProduct().getName())
+                        .productImageUrl(bid.getProduct().getImageUrl())
                         .shoeSize(bid.getShoeSize())
                         .bidPrice(bid.getBidPrice())
                         .status(bid.getStatus().name())
@@ -42,8 +43,17 @@ public class MarketDataServiceImpl implements MarketDataService {
 
     @Override
     public MarketSummaryResponse getMarketSummary(Long productId, String shoeSize) {
-        BigDecimal highestBid = bidRepository.findHighestBidPrice(productId, shoeSize).orElse(null);
-        BigDecimal lowestAsk = askRepository.findLowestAskByProductAndSize(productId, shoeSize).orElse(null);
+        BigDecimal highestBid;
+        BigDecimal lowestAsk;
+
+        if (shoeSize != null && !shoeSize.isBlank()) {
+            highestBid = bidRepository.findHighestBidPrice(productId, shoeSize).orElse(null);
+            lowestAsk = askRepository.findLowestAskByProductAndSize(productId, shoeSize).orElse(null);
+        } else {
+            highestBid = bidRepository.findHighestBidByProduct(productId).orElse(null);
+            lowestAsk = askRepository.findLowestAskByProduct(productId).orElse(null);
+        }
+
         BigDecimal lastSalePrice = orderRepository.findLastSalePriceByMasterId(productId).orElse(null);
 
         return MarketSummaryResponse.builder()

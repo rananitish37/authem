@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8081/api/v1/auth';
+const BASE_API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081/api';
+const API_BASE_URL = `${BASE_API}/v1/auth`;
 
 const getInitialUser = () => {
   try {

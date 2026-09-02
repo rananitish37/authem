@@ -50,7 +50,8 @@ public class AdminCatalogController {
             @RequestParam(defaultValue = "id,desc") String sort
     ) {
         String[] sortParams = sort.split(",");
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortParams[1]), sortParams[0]));
+        Sort.Direction direction = sortParams.length > 1 ? Sort.Direction.fromString(sortParams[1]) : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortParams[0]));
         return ResponseEntity.ok(productService.getAllProducts(search, brand, pageable));
     }
 

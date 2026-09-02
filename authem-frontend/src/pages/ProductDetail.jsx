@@ -11,7 +11,7 @@ import {
   Sparkles,
   ExternalLink
 } from 'lucide-react';
-import axios from 'axios';
+import API from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const ProductDetail = () => {
@@ -45,11 +45,8 @@ export const ProductDetail = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/v1/products/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch product details.');
-        }
-        const data = await response.json();
+        const response = await API.get(`/v1/products/${id}`);
+        const data = response.data;
 
         setProduct(data);
 
@@ -67,7 +64,7 @@ export const ProductDetail = () => {
           setSelectedSize(sizes[0]);
         }
       } catch (err) {
-        setError(err.message || 'Something went wrong');
+        setError(err.response?.data?.message || err.message || 'Something went wrong');
       } finally {
         setLoading(false);
       }
@@ -84,12 +81,9 @@ export const ProductDetail = () => {
 
     const fetchMarketSummary = async () => {
       try {
-        const res = await fetch(`/api/v1/market-data/products/${id}/summary?shoeSize=${selectedSize.size}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSizeMarketData(data);
+        const res = await API.get(`/v1/market-data/products/${id}/summary?shoeSize=${selectedSize.size}`);
+        if (res.data) {
+          setSizeMarketData(res.data);
         }
       } catch (e) {
         // Silent fallback to parent product stats
@@ -119,12 +113,10 @@ export const ProductDetail = () => {
     setSubmitting(true);
     setModalError('');
     try {
-      const res = await axios.post('/api/v1/trading/bids', {
+      const res = await API.post('/v1/trading/bids', {
         productId: product.id,
         shoeSize: selectedSize.size,
         bidPrice: price
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       setTradeResult(res.data);
@@ -152,12 +144,10 @@ export const ProductDetail = () => {
     setSubmitting(true);
     setModalError('');
     try {
-      const res = await axios.post('/api/v1/trading/asks', {
+      const res = await API.post('/v1/trading/asks', {
         productId: product.id,
         shoeSize: selectedSize.size,
         askPrice: price
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       setTradeResult(res.data);

@@ -1,5 +1,6 @@
 package com.authem.listing.controller;
 
+import com.authem.auth.model.User;
 import com.authem.listing.dto.AskDTOs.*;
 import com.authem.listing.service.SellerAskService;
 import jakarta.validation.Valid;
@@ -22,13 +23,15 @@ public class SellerCatalogController {
      */
     @GetMapping("/catalog/search")
     public ResponseEntity<Page<MasterProductSummaryDTO>> searchCatalog(
-            @RequestParam(defaultValue = "") String query,
-            @RequestParam(defaultValue = "") String brand,
+            @RequestParam(defaultValue = "", required = false) String query,
+            @RequestParam(defaultValue = "", required = false) String search,
+            @RequestParam(defaultValue = "", required = false) String brand,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size
     ) {
+        String searchTerm = (query != null && !query.isBlank()) ? query : search;
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        return ResponseEntity.ok(sellerAskService.searchCatalogForListing(query, brand, pageable));
+        return ResponseEntity.ok(sellerAskService.searchCatalogForListing(searchTerm, brand, pageable));
     }
 
     /**
@@ -36,11 +39,10 @@ public class SellerCatalogController {
      */
     @PostMapping("/asks")
     public ResponseEntity<AskResponseDTO> createAsk(
-            @AuthenticationPrincipal Long currentUserId, // Resolved from JWT token
+            @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody CreateAskRequestDTO request
     ) {
-        // Fallback for local testing if unauthenticated
-        Long sellerId = (currentUserId != null) ? currentUserId : 1L;
+        Long sellerId = (currentUser != null) ? currentUser.getId() : 1L;
         return new ResponseEntity<>(sellerAskService.createAsk(sellerId, request), HttpStatus.CREATED);
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Tag, CheckCircle2, ArrowLeft, DollarSign, Layers, Loader2 } from 'lucide-react';
-import { useAuthStore } from '../../store/useAuthStore'; // Adjust path based on your store file
+import API from '../../services/api';
 
 const US_SIZES = ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13'];
 
@@ -18,50 +18,21 @@ export default function SellerCreateAsk() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successAsk, setSuccessAsk] = useState(null);
 
-  // Helper to retrieve JWT Token dynamically
-  const getAuthHeaders = () => {
-    let token = useAuthStore.getState().token;
-    if (!token) {
-      try {
-        const persisted = JSON.parse(localStorage.getItem('auth-storage'));
-        token = persisted?.state?.token;
-      } catch (e) {
-        // Fallthrough
-      }
-    }
-    if (!token) {
-      token = localStorage.getItem('token') || localStorage.getItem('jwt');
-    }
-
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-  };
-
   // Search Master Catalog API
   useEffect(() => {
     const fetchCatalog = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
-          search: searchQuery.trim(),
-          page: '0',
-          size: '12',
-          sort: 'id,desc'
+        const res = await API.get('/v1/seller/catalog/search', {
+          params: {
+            query: searchQuery.trim(),
+            page: 0,
+            size: 12
+          }
         });
 
-        // Endpoint can be updated to /api/v1/seller/catalog or /api/v1/admin/catalog
-        const res = await fetch(`/api/v1/seller/catalog/search?${params.toString()}`, {
-          headers: getAuthHeaders()
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.content || []);
-        } else {
-          console.error('Failed to query master catalog. Status:', res.status);
-        }
+        const data = res.data;
+        setSearchResults(Array.isArray(data) ? data : (data?.content || []));
       } catch (err) {
         console.error('Failed to query master catalog:', err);
       } finally {
@@ -84,27 +55,18 @@ export default function SellerCreateAsk() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/v1/seller/asks', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          masterProductId: selectedProduct.id,
-          size: selectedSize,
-          askPrice: parseFloat(askPrice),
-          condition: condition
-        })
+      const res = await API.post('/v1/seller/asks', {
+        masterProductId: selectedProduct.id,
+        size: selectedSize,
+        askPrice: parseFloat(askPrice),
+        condition: condition
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setSuccessAsk(data);
-        setStep(3); // Success step
-      } else {
-        const errData = await res.json();
-        alert(errData.message || 'Failed to submit ask');
-      }
+      setSuccessAsk(res.data);
+      setStep(3); // Success step
     } catch (err) {
       console.error('Error submitting ask:', err);
+      alert(err.response?.data?.message || 'Failed to submit ask');
     } finally {
       setIsSubmitting(false);
     }

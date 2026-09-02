@@ -18,14 +18,14 @@ public class MarketDataController {
     @GetMapping("/products/{productId}/summary")
     public ResponseEntity<MarketSummaryResponse> getMarketSummary(
             @PathVariable Long productId,
-            @RequestParam String shoeSize) {
+            @RequestParam(required = false, defaultValue = "") String shoeSize) {
         return ResponseEntity.ok(marketDataService.getMarketSummary(productId, shoeSize));
     }
 
     @GetMapping("/products/{productId}/bids")
     public ResponseEntity<List<BidResponse>> getActiveBids(
             @PathVariable Long productId,
-            @RequestParam(required = false) String shoeSize) {
+            @RequestParam(required = false, defaultValue = "") String shoeSize) {
 
         List<BidResponse> bids = marketDataService.getActiveBids(productId, shoeSize);
         return ResponseEntity.ok(bids);

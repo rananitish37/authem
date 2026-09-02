@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, ShieldCheck, ArrowRight, Flame, Sparkles, Loader2 } from 'lucide-react';
+import API from '../services/api';
 
 const BRANDS = [
   { name: 'Jordan', logo: '🏀', bg: 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
@@ -12,34 +13,44 @@ const BRANDS = [
 ];
 
 export const Home = () => {
-  // Dynamic state replacing static FEATURED_PRODUCTS
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [heroProduct, setHeroProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch trending/featured products on mount
+  // Fetch trending/featured products on mount from master catalog
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Replace with your actual backend endpoint URL
-        const response = await fetch('/api/products/featured');
-        if (!response.ok) {
-          throw new Error('Failed to fetch marketplace data');
+        const response = await API.get('/v1/products/browse', {
+          params: { page: 0, size: 8, sort: 'id,desc' }
+        });
+
+        const rawList = Array.isArray(response.data) ? response.data : (response.data?.content || []);
+
+        const mapped = rawList.map((item) => ({
+          id: item.id,
+          name: item.name,
+          colorway: item.colorway || item.brand || '',
+          brand: item.brand,
+          sku: item.sku,
+          lowestAsk: item.lowestAskPrice ?? item.lowestAsk ?? item.retailPrice ?? 0,
+          highestBid: item.highestBidPrice ?? item.highestBid ?? 0,
+          retailPrice: item.retailPrice ?? 0,
+          imageUrl: item.imageUrl || 'https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=600&q=80',
+          totalSales: 124
+        }));
+
+        setFeaturedProducts(mapped);
+        if (mapped.length > 0) {
+          setHeroProduct(mapped[0]);
         }
-        const data = await response.json();
-
-        // Expecting { products: [...], heroProduct: {...} } or an array of products
-        const productsList = Array.isArray(data) ? data : data.products || [];
-        setFeaturedProducts(productsList);
-
-        // Use backend provided hero item or default to the first featured product
-        setHeroProduct(data.heroProduct || productsList[0] || null);
       } catch (err) {
-        setError(err.message || 'Error loading homepage products');
+        console.error('Home data fetch error:', err);
+        setError('Error loading homepage products.');
       } finally {
         setLoading(false);
       }
@@ -110,7 +121,7 @@ export const Home = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-400 font-bold uppercase">Lowest Ask</p>
-                    <p className="text-xl font-extrabold text-emerald-400">${heroProduct.lowestAsk}</p>
+                    <p className="text-xl font-extrabold text-emerald-400">${heroProduct.lowestAsk || heroProduct.retailPrice}</p>
                   </div>
                 </div>
               </Link>
@@ -191,10 +202,10 @@ export const Home = () => {
                   {/* Product Badge */}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md">
-                      {product.tag || 'Popular'}
+                      Verified
                     </span>
                     <span className="text-[11px] font-bold text-slate-400 dark:text-slate-400">
-                      {product.totalSales ? product.totalSales.toLocaleString() : 0} Sold
+                      {product.brand}
                     </span>
                   </div>
 
@@ -220,11 +231,11 @@ export const Home = () => {
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-700/80 flex items-end justify-between">
                   <div>
                     <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Lowest Ask</p>
-                    <p className="text-lg font-black text-slate-900 dark:text-white">${product.lowestAsk || 0}</p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">${product.lowestAsk || product.retailPrice || 0}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase">Highest Bid</p>
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">${product.highestBid || 0}</p>
+                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300">${product.highestBid ? `$${product.highestBid}` : '--'}</p>
                   </div>
                 </div>
               </Link>

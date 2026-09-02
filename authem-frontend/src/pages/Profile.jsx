@@ -19,7 +19,7 @@ import {
   DollarSign,
   X
 } from 'lucide-react';
-import axios from 'axios';
+import API from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const Profile = () => {
@@ -52,22 +52,43 @@ export const Profile = () => {
       setLoading(true);
       setError(null);
 
-      const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
-
-      // Parallel fetch of user data
+      // Parallel fetch of user data via unified API instance
       const [walletRes, ordersRes, bidsRes, asksRes] = await Promise.allSettled([
-        axios.get('/api/v1/wallet', authHeaders),
-        axios.get('/api/v1/orders', authHeaders),
-        axios.get('/api/v1/trading/bids/my', authHeaders),
-        axios.get('/api/v1/trading/asks/my', authHeaders)
+        API.get('/v1/wallet'),
+        API.get('/v1/orders'),
+        API.get('/v1/trading/bids/my'),
+        API.get('/v1/trading/asks/my')
       ]);
 
-      if (walletRes.status === 'fulfilled') setWallet(walletRes.value.data);
-      if (ordersRes.status === 'fulfilled') setOrders(ordersRes.value.data);
-      if (bidsRes.status === 'fulfilled') setBids(bidsRes.value.data);
-      if (asksRes.status === 'fulfilled') setAsks(asksRes.value.data);
+      if (walletRes.status === 'fulfilled') {
+        setWallet(walletRes.value.data);
+      } else {
+        console.error('Wallet fetch failed:', walletRes.reason);
+      }
+
+      if (ordersRes.status === 'fulfilled') {
+        const orderData = Array.isArray(ordersRes.value.data) ? ordersRes.value.data : (ordersRes.value.data?.content || []);
+        setOrders(orderData);
+      } else {
+        console.error('Orders fetch failed:', ordersRes.reason);
+      }
+
+      if (bidsRes.status === 'fulfilled') {
+        const bidData = Array.isArray(bidsRes.value.data) ? bidsRes.value.data : (bidsRes.value.data?.content || []);
+        setBids(bidData);
+      } else {
+        console.error('Bids fetch failed:', bidsRes.reason);
+      }
+
+      if (asksRes.status === 'fulfilled') {
+        const askData = Array.isArray(asksRes.value.data) ? asksRes.value.data : (asksRes.value.data?.content || []);
+        setAsks(askData);
+      } else {
+        console.error('Asks fetch failed:', asksRes.reason);
+      }
 
     } catch (err) {
+      console.error('Profile data load error:', err);
       setError('Failed to load user profile data.');
     } finally {
       setLoading(false);
@@ -86,9 +107,7 @@ export const Profile = () => {
 
     setTopUpLoading(true);
     try {
-      const res = await axios.post('/api/v1/wallet/top-up', { amount }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await API.post('/v1/wallet/top-up', { amount: parseFloat(amount) });
       setWallet(res.data);
       setTopUpModal(false);
       setActionMessage(`Successfully deposited $${amount.toFixed(2)} into your wallet!`);
@@ -105,9 +124,7 @@ export const Profile = () => {
     if (!window.confirm('Cancel this bid and return held funds to your wallet?')) return;
 
     try {
-      await axios.delete(`/api/v1/trading/bids/${bidId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await API.delete(`/v1/trading/bids/${bidId}`);
       setActionMessage('Bid cancelled and funds returned to your available balance.');
       setTimeout(() => setActionMessage(''), 4000);
       loadUserData();
@@ -121,9 +138,7 @@ export const Profile = () => {
     if (!window.confirm('Cancel this active asking listing?')) return;
 
     try {
-      await axios.delete(`/api/v1/trading/asks/${askId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await API.delete(`/v1/trading/asks/${askId}`);
       setActionMessage('Ask listing cancelled successfully.');
       setTimeout(() => setActionMessage(''), 4000);
       loadUserData();
